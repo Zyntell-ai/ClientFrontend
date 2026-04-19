@@ -25,7 +25,7 @@ import BillingPage from './pages/billing/BillingPage'
 import CommissionsPage from './pages/commissions/CommissionsPage'
 import NumbersPage from './pages/numbers/NumbersPage'
 import SettingsPage from './pages/settings/SettingsPage'
-
+import BotTestPage from './pages/bot-test/BotTestPage'
 // ─── Guards ──────────────────────────────────────────────────
 function RequireAuth({ children }) {
   const { isAuthenticated, business } = useAuthStore()
@@ -90,7 +90,7 @@ export default function App() {
         <Route path="/commissions" element={<RequireAuth><CommissionsPage /></RequireAuth>} />
         <Route path="/numbers" element={<RequireAuth><NumbersPage /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
-
+        <Route path="/bot-test" element={<RequireAuth><BotTestPage /></RequireAuth>} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
       </Routes>

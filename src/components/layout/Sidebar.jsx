@@ -8,7 +8,7 @@ import clsx from 'clsx'
 import {
   LayoutDashboard, Calendar, Users, Briefcase, UserCheck,
   BarChart3, Receipt, DollarSign, Phone, Settings, Zap,
-  ChevronRight, LogOut, Star, Clock, MessageSquare, Target
+  ChevronRight, LogOut, Star, Clock, MessageSquare, Target, Bot
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -45,6 +45,7 @@ const NAV_ITEMS = [
     section: 'Setup',
     items: [
       { to: '/numbers', icon: Phone, label: 'Phone Numbers' },
+      { to: '/bot-test', icon: Bot, label: 'Test Bot', badge: 'LIVE' }, // ← ADD THIS
       { to: '/settings', icon: Settings, label: 'Settings' },
     ],
   },
