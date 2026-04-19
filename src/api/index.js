@@ -1,0 +1,12 @@
+// src/api/index.js — barrel export for all API modules
+export { authApi } from './auth.api'
+export { categoriesApi } from './categories.api'
+export { onboardingApi } from './onboarding.api'
+export { businessApi } from './business.api'
+export { bookingsApi } from './bookings.api'
+export { numbersApi } from './numbers.api'
+export { customersApi } from './customers.api'
+export { commissionsApi } from './commissions.api'
+export { billingApi } from './billing.api'
+export { analyticsApi } from './analytics.api'
+export { leadsApi } from './leads.api'
