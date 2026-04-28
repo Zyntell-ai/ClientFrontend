@@ -37,7 +37,7 @@ export default function BillingPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-display font-bold text-slate-100 capitalize">{current.plan?.toUpperCase()} Plan</p>
+                    <p className="text-2xl font-display font-bold text-[#1E1B4B] capitalize">{current.plan?.toUpperCase()} Plan</p>
                     <p className="text-sm text-slate-500 mt-1">
                       {current.plan === 'trial' ? 'Free trial — 50 conversations included' :
                         current.plan === 'plus' ? '₹1,500/month' : '₹3,000/month'}
@@ -48,10 +48,10 @@ export default function BillingPage() {
                   </Badge>
                 </div>
                 {current.invoice && (
-                  <div className="border border-navy-400/30 rounded-lg p-4">
+                  <div className="border border-violet-100 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-sm font-semibold text-slate-200">Current Invoice</p>
+                        <p className="text-sm font-semibold text-[#1E1B4B]">Current Invoice</p>
                         <p className="text-xs text-slate-500 mt-0.5">{fmt.date(current.invoice.periodStart)} – {fmt.date(current.invoice.periodEnd)}</p>
                       </div>
                       <div className="text-right">
@@ -78,13 +78,13 @@ export default function BillingPage() {
 
       {/* Plans upgrade section */}
       <div className="mb-8">
-        <h3 className="font-display font-semibold text-slate-200 mb-4">Upgrade Your Plan</h3>
+        <h3 className="font-display font-semibold text-[#1E1B4B] mb-4">Upgrade Your Plan</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PLANS.map(({ id, name, price, desc, features }) => (
-            <div key={id} className={clsx('glass-card p-5 border transition-all', id === 'plus' ? 'border-brand-blue/40 bg-brand-blue/5' : 'border-navy-400/30 hover:border-navy-400/50')}>
-              {id === 'plus' && <div className="text-[10px] text-brand-blue font-bold uppercase tracking-wider mb-2">Most Popular</div>}
-              <p className="font-display font-bold text-slate-100 text-lg">{name}</p>
-              <p className="text-2xl font-display font-extrabold text-slate-100 mt-1">
+            <div key={id} className={clsx('glass-card p-5 border transition-all', id === 'plus' ? 'border-violet-300 bg-violet-50/60' : 'border-violet-100 hover:border-navy-400/50')}>
+              {id === 'plus' && <div className="text-[10px] text-violet-600 font-bold uppercase tracking-wider mb-2">Most Popular</div>}
+              <p className="font-display font-bold text-[#1E1B4B] text-lg">{name}</p>
+              <p className="text-2xl font-display font-extrabold text-[#1E1B4B] mt-1">
                 {price === 0 ? 'Free' : fmt.currency(price)}<span className="text-xs text-slate-500 font-400">{price > 0 ? '/mo' : ''}</span>
               </p>
               <p className="text-xs text-slate-500 mt-1 mb-4">{desc}</p>
@@ -106,13 +106,13 @@ export default function BillingPage() {
         ) : (
           <div className="space-y-2">
             {invoices.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between p-3 bg-navy-700/30 rounded-lg">
+              <div key={inv.id} className="flex items-center justify-between p-3 bg-violet-50 rounded-lg">
                 <div>
-                  <p className="text-sm font-medium text-slate-200">{fmt.date(inv.periodStart)} – {fmt.date(inv.periodEnd)}</p>
+                  <p className="text-sm font-medium text-[#1E1B4B]">{fmt.date(inv.periodStart)} – {fmt.date(inv.periodEnd)}</p>
                   <p className="text-xs text-slate-500 mt-0.5 capitalize">{inv.plan} plan</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-200">{fmt.currency(inv.totalAmount)}</p>
+                  <p className="text-sm font-semibold text-[#1E1B4B]">{fmt.currency(inv.totalAmount)}</p>
                   <Badge color={inv.status === 'PAID' ? 'green' : inv.status === 'OVERDUE' ? 'red' : 'amber'} className="text-[10px] mt-1">{inv.status}</Badge>
                 </div>
               </div>
@@ -124,17 +124,17 @@ export default function BillingPage() {
       <Modal open={showPay} onClose={() => setShowPay(false)} title="Complete Payment">
         <Alert type="info">Payment will be processed via Razorpay. You will be redirected to complete the transaction.</Alert>
         <div className="mt-4 space-y-3">
-          <div className="bg-navy-700/40 rounded-lg p-4">
+          <div className="bg-violet-50 rounded-lg p-4">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Plan Fee</span>
-              <span className="text-slate-200">{fmt.currency(current?.invoice?.planFee || 0)}</span>
+              <span className="text-[#1E1B4B]">{fmt.currency(current?.invoice?.planFee || 0)}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
               <span className="text-slate-400">Commissions</span>
-              <span className="text-slate-200">{fmt.currency(current?.invoice?.commissionTotal || 0)}</span>
+              <span className="text-[#1E1B4B]">{fmt.currency(current?.invoice?.commissionTotal || 0)}</span>
             </div>
-            <div className="flex justify-between text-sm font-bold mt-2 pt-2 border-t border-navy-400/30">
-              <span className="text-slate-200">Total</span>
+            <div className="flex justify-between text-sm font-bold mt-2 pt-2 border-t border-violet-100">
+              <span className="text-[#1E1B4B]">Total</span>
               <span className="text-amber-400">{fmt.currency(current?.invoice?.totalAmount || 0)}</span>
             </div>
           </div>

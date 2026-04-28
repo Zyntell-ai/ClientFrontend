@@ -31,7 +31,7 @@ function StaffForm({ onSubmit, loading }) {
           {DAY_LABELS.map((day, idx) => (
             <button key={day} type="button" onClick={() => toggleDay(idx)}
               className={clsx('w-10 h-10 rounded-lg text-xs font-semibold border transition-all',
-                form.availableDays.includes(idx) ? 'bg-brand-blue border-brand-blue text-white' : 'border-navy-400/40 text-slate-500 hover:border-navy-400/70'
+                form.availableDays.includes(idx) ? 'bg-violet-600 border-violet-600 text-white' : 'border-violet-100 text-slate-500 hover:border-navy-400/70'
               )}>{day.slice(0, 2)}</button>
           ))}
         </div>
@@ -76,8 +76,8 @@ export default function StaffPage() {
               <div className="flex items-start gap-3 mb-4">
                 <Avatar name={m.name} size="lg" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-display font-semibold text-slate-100">{m.name}</p>
-                  <p className="text-xs text-brand-blue mt-0.5">{m.role}</p>
+                  <p className="font-display font-semibold text-[#1E1B4B]">{m.name}</p>
+                  <p className="text-xs text-violet-600 mt-0.5">{m.role}</p>
                   {m.specialization && <p className="text-xs text-slate-500 mt-0.5">{m.specialization}</p>}
                 </div>
                 <button onClick={() => deleteMutation.mutate(m.id)} className="p-1.5 text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
@@ -89,7 +89,7 @@ export default function StaffPage() {
               <div className="flex gap-1">
                 {DAY_LABELS.map((day, idx) => (
                   <div key={day} className={clsx('w-7 h-7 rounded text-[10px] font-semibold flex items-center justify-center',
-                    (m.availableDays || []).includes(idx) ? 'bg-brand-blue/20 text-brand-blue' : 'bg-navy-700/50 text-slate-700'
+                    (m.availableDays || []).includes(idx) ? 'bg-violet-100 text-violet-600' : 'bg-slate-100 text-slate-400'
                   )}>{day.slice(0, 2)}</div>
                 ))}
               </div>

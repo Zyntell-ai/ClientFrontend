@@ -6,20 +6,15 @@ import apiClient from '../../api/apiClient'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Alert } from '../../components/ui/index'
 import { CATEGORY_ICONS } from '../../utils/index'
-import {
-  Send, RotateCcw, Bot, Wifi, Check, CheckCheck,
-  Zap, Info, ChevronDown
-} from 'lucide-react'
+import { Send, RotateCcw, Bot, Wifi, Check, CheckCheck, Zap, Info, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
-// ── API calls ─────────────────────────────────────────────────
 const botTestApi = {
   send:  (message, sessionId) => apiClient.post('/api/business/bot-test', { message, sessionId }),
   reset: (sessionId)          => apiClient.post('/api/business/bot-test', { reset: true, sessionId }),
 }
 
-// ── Quick test scenarios ──────────────────────────────────────
 const SCENARIOS = {
   healthcare: [
     { label: '🤒 Health concern',   msg: 'I have knee pain, I need to see a doctor' },
@@ -55,20 +50,17 @@ const SCENARIOS = {
   ],
 }
 
-// ── Message bubble ────────────────────────────────────────────
 function Bubble({ msg }) {
   const isBot = msg.role === 'bot'
-
   if (msg.role === 'system') {
     return (
       <div className="flex justify-center my-1.5">
-        <span className="bg-[#182229] border border-white/5 text-slate-600 text-[10px] px-3 py-1 rounded-full">
+        <span className="bg-[#182229] border border-white/5 text-slate-500 text-[10px] px-3 py-1 rounded-full">
           {msg.text}
         </span>
       </div>
     )
   }
-
   return (
     <div className={clsx('flex mb-2.5', isBot ? 'justify-start' : 'justify-end')}>
       {isBot && (
@@ -114,19 +106,18 @@ function CollapsiblePanel({ title, icon: Icon, children }) {
   return (
     <div className="glass-card overflow-hidden">
       <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-navy-600/20 transition-colors">
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-violet-50 transition-colors">
         <div className="flex items-center gap-2">
-          <Icon className="w-3.5 h-3.5 text-slate-500" />
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{title}</span>
+          <Icon className="w-3.5 h-3.5 text-violet-500" />
+          <span className="text-xs font-semibold text-slate-600 uppercase tracking-widest">{title}</span>
         </div>
-        <ChevronDown className={clsx('w-3.5 h-3.5 text-slate-600 transition-transform duration-200', open && 'rotate-180')} />
+        <ChevronDown className={clsx('w-3.5 h-3.5 text-slate-400 transition-transform duration-200', open && 'rotate-180')} />
       </button>
-      {open && <div className="px-4 pb-4 border-t border-navy-400/20">{children}</div>}
+      {open && <div className="px-4 pb-4 border-t border-violet-100">{children}</div>}
     </div>
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────
 export default function BotTestPage() {
   const { business } = useAuthStore()
   const [messages, setMessages] = useState([])
@@ -163,7 +154,6 @@ export default function BotTestPage() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
-  // Show bot welcome message on load
   useEffect(() => {
     if (messages.length === 0 && settings !== undefined) {
       const welcome = settings?.welcomeMessage ||
@@ -172,13 +162,10 @@ export default function BotTestPage() {
     }
   }, [settings])
 
-  // Send message to real backend bot
   const send = useCallback(async (text) => {
     const msg = text.trim()
     if (!msg || isTyping) return
-    setInput('')
-    setError('')
-    setMsgCount(c => c + 1)
+    setInput(''); setError(''); setMsgCount(c => c + 1)
     add('user', msg, { sent: false })
     setTimeout(() => {
       setMessages(m => m.map((x, i) => i === m.length - 1 ? { ...x, sent: true } : x))
@@ -197,9 +184,7 @@ export default function BotTestPage() {
   }, [isTyping])
 
   const reset = async () => {
-    setIsTyping(false)
-    setError('')
-    setMsgCount(0)
+    setIsTyping(false); setError(''); setMsgCount(0)
     try { await botTestApi.reset(sessionId.current) } catch { /* silent */ }
     sessionId.current = `${business?.id}_${Date.now()}`
     setMessages([])
@@ -219,16 +204,16 @@ export default function BotTestPage() {
     <DashboardLayout title="Live Bot Test" subtitle="Chat with your real AI bot — same engine as production">
       <div className="flex gap-5" style={{ height: 'calc(100vh - 11rem)' }}>
 
-        {/* Phone mockup */}
+        {/* Phone mockup — WhatsApp dark theme is intentional */}
         <div className="flex flex-col" style={{ width: '410px', minWidth: '380px' }}>
-          <div className="flex-1 flex flex-col overflow-hidden rounded-[2.5rem] border-[3px] border-navy-400/30"
+          <div className="flex-1 flex flex-col overflow-hidden rounded-[2.5rem] border-[3px] border-slate-200"
             style={{
               background: '#0b141a',
-              boxShadow: '0 0 0 6px #040d21, 0 0 0 8px rgba(30,58,95,.2), 0 30px 70px rgba(0,0,0,.6)',
+              boxShadow: '0 0 0 6px #f0eeff, 0 0 0 8px rgba(124,58,237,0.08), 0 30px 70px rgba(124,58,237,0.15)',
             }}>
 
             {/* Status bar */}
-            <div className="flex justify-between px-6 pt-3 pb-1 text-[10px] text-slate-700">
+            <div className="flex justify-between px-6 pt-3 pb-1 text-[10px] text-slate-600">
               <span>{format(new Date(), 'HH:mm')}</span>
               <div className="flex gap-1 items-center">
                 <Wifi className="w-3 h-3" /><span>5G</span>
@@ -289,7 +274,7 @@ export default function BotTestPage() {
           </div>
         </div>
 
-        {/* Right panel */}
+        {/* Right panel — light theme */}
         <div className="flex-1 min-w-0 flex flex-col gap-4 overflow-y-auto">
 
           {error && (
@@ -301,14 +286,14 @@ export default function BotTestPage() {
           {/* Quick scenarios */}
           <div className="glass-card p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-3.5 h-3.5 text-brand-blue" />
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Quick Scenarios</p>
+              <Zap className="w-3.5 h-3.5 text-violet-500" />
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest">Quick Scenarios</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {scenarios.map(({ label, msg }) => (
                 <button key={label} onClick={() => send(msg)} disabled={isTyping}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium border border-navy-400/30 text-slate-400
-                             hover:border-brand-blue/50 hover:text-brand-blue hover:bg-brand-blue/5
+                  className="px-3 py-1.5 rounded-full text-xs font-medium border border-violet-100 text-slate-600
+                             hover:border-violet-400 hover:text-violet-700 hover:bg-violet-50
                              disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                   {label}
                 </button>
@@ -322,18 +307,18 @@ export default function BotTestPage() {
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Messages sent', value: msgCount },
-                { label: 'Persona',       value: persona },
+                { label: 'Persona',       value: persona  },
                 { label: 'Language',      value: langLabel },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-navy-700/50 rounded-xl p-3 text-center">
-                  <p className="text-sm font-bold text-slate-200">{value ?? '—'}</p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">{label}</p>
+                <div key={label} className="bg-violet-50 rounded-xl p-3 text-center border border-violet-100">
+                  <p className="text-sm font-bold text-[#1E1B4B]">{value ?? '—'}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
             <button onClick={reset}
-              className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-navy-400/25
-                         text-xs text-slate-500 hover:text-red-400 hover:border-red-400/30 transition-all">
+              className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-violet-100
+                         text-xs text-slate-500 hover:text-rose-500 hover:border-rose-200 transition-all">
               <RotateCcw className="w-3 h-3" /> Reset conversation
             </button>
           </div>
@@ -342,16 +327,16 @@ export default function BotTestPage() {
           <CollapsiblePanel title="Bot Configuration" icon={Bot}>
             <div className="mt-3">
               {[
-                ['Persona',            settings?.botPersona || 'Priya'],
-                ['Tone',               settings?.botTone || 'friendly'],
-                ['Language',           langLabel],
-                ['Auto-confirm',       settings?.autoConfirmBookings ? 'Yes' : 'No'],
-                ['Buffer (min)',        settings?.bookingBufferMinutes ?? 0],
-                ['Max per slot',       settings?.maxBookingsPerSlot ?? 1],
+                ['Persona',      settings?.botPersona || 'Priya'],
+                ['Tone',         settings?.botTone || 'friendly'],
+                ['Language',     langLabel],
+                ['Auto-confirm', settings?.autoConfirmBookings ? 'Yes' : 'No'],
+                ['Buffer (min)', settings?.bookingBufferMinutes ?? 0],
+                ['Max per slot', settings?.maxBookingsPerSlot ?? 1],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between py-2 border-b border-navy-400/10 last:border-0">
-                  <span className="text-xs text-slate-600">{label}</span>
-                  <span className="text-xs font-semibold text-slate-300 capitalize">{String(value)}</span>
+                <div key={label} className="flex justify-between py-2 border-b border-violet-50 last:border-0">
+                  <span className="text-xs text-slate-500">{label}</span>
+                  <span className="text-xs font-semibold text-[#1E1B4B] capitalize">{String(value)}</span>
                 </div>
               ))}
             </div>
@@ -362,12 +347,12 @@ export default function BotTestPage() {
             <CollapsiblePanel title={`Services (${services.length})`} icon={Info}>
               <div className="mt-3">
                 {services.map(s => (
-                  <div key={s.id} className="flex justify-between items-center py-2 border-b border-navy-400/10 last:border-0">
+                  <div key={s.id} className="flex justify-between items-center py-2 border-b border-violet-50 last:border-0">
                     <div>
-                      <p className="text-xs font-medium text-slate-300">{s.name}</p>
-                      {s.nameRegional && <p className="text-[10px] text-slate-600">{s.nameRegional}</p>}
+                      <p className="text-xs font-medium text-[#1E1B4B]">{s.name}</p>
+                      {s.nameRegional && <p className="text-[10px] text-slate-400">{s.nameRegional}</p>}
                     </div>
-                    <span className="text-xs font-semibold text-green-400">
+                    <span className="text-xs font-semibold text-emerald-600">
                       {s.price ? `₹${s.price}` : s.priceMin ? `₹${s.priceMin}–${s.priceMax}` : 'On consult'}
                     </span>
                   </div>
@@ -377,14 +362,14 @@ export default function BotTestPage() {
           )}
 
           {/* How it works */}
-          <div className="glass-card p-4 border border-brand-blue/10">
+          <div className="glass-card p-4 border border-violet-100">
             <p className="text-xs font-semibold text-slate-500 mb-2.5 flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-brand-blue/60" /> How this works
+              <Info className="w-3.5 h-3.5 text-violet-400" /> How this works
             </p>
-            <ul className="text-[11px] text-slate-600 space-y-2 leading-relaxed">
-              <li>→ Messages go to <span className="text-brand-blue font-medium">POST /api/business/bot-test</span></li>
-              <li>→ The <span className="text-brand-blue font-medium">real stateMachine</span> processes it — same code as production</li>
-              <li>→ Reply is captured <span className="text-brand-blue font-medium">before reaching Twilio</span> and returned here</li>
+            <ul className="text-[11px] text-slate-500 space-y-2 leading-relaxed">
+              <li>→ Messages go to <span className="text-violet-600 font-medium">POST /api/business/bot-test</span></li>
+              <li>→ The <span className="text-violet-600 font-medium">real stateMachine</span> processes it — same code as production</li>
+              <li>→ Reply is captured <span className="text-violet-600 font-medium">before reaching Twilio</span> and returned here</li>
               <li>→ Conversation state lives in Redis — resets when you tap ↺</li>
               <li>→ Changes to services / FAQs / hours take effect after reset</li>
             </ul>

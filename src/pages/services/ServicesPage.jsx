@@ -73,22 +73,22 @@ export default function ServicesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.map((svc) => (
-            <div key={svc.id} className="glass-card gradient-border p-5 hover:border-brand-blue/20 transition-all group">
+            <div key={svc.id} className="glass-card gradient-border p-5 hover:border-violet-200 transition-all group">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="font-display font-semibold text-slate-100 text-sm">{svc.name}</p>
-                  {svc.nameRegional && <p className="text-xs text-slate-500 mt-0.5">{svc.nameRegional}</p>}
+                  <p className="font-display font-semibold text-[#1E1B4B] text-sm">{svc.name}</p>
+                  {svc.nameRegional && <p className="text-xs hover:text-violet-600 mt-0.5">{svc.nameRegional}</p>}
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => setEditSvc(svc)} className="p-1.5 text-slate-500 hover:text-brand-blue transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => deleteMutation.mutate(svc.id)} className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setEditSvc(svc)} className="p-1.5 hover:text-violet-600 hover:text-violet-600 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => deleteMutation.mutate(svc.id)} className="p-1.5 hover:text-violet-600 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
-              {svc.description && <p className="text-xs text-slate-500 mb-3 line-clamp-2">{svc.description}</p>}
+              {svc.description && <p className="text-xs hover:text-violet-600 mb-3 line-clamp-2">{svc.description}</p>}
               <div className="flex items-center gap-3 text-xs">
                 <span className="flex items-center gap-1 text-slate-400"><Clock className="w-3 h-3" />{fmt.duration(svc.duration)}</span>
-                {svc.price && <span className="flex items-center gap-1 text-green-400 font-semibold"><DollarSign className="w-3 h-3" />{fmt.currency(svc.price)}</span>}
-                {svc.priceMin && <span className="text-green-400 font-semibold">{fmt.currency(svc.priceMin)}–{fmt.currency(svc.priceMax)}</span>}
+                {svc.price && <span className="flex items-center gap-1 text-emerald-600 font-semibold"><DollarSign className="w-3 h-3" />{fmt.currency(svc.price)}</span>}
+                {svc.priceMin && <span className="text-emerald-600 font-semibold">{fmt.currency(svc.priceMin)}–{fmt.currency(svc.priceMax)}</span>}
               </div>
             </div>
           ))}
