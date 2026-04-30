@@ -1,24 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/*
-  ══════════════════════════════════════════════════════
-   DESIGN TOKENS  ·  Amethyst Pearl Light
-  ══════════════════════════════════════════════════════
-   --bg-0        : #FAFAF8   warm white pearl (main bg)
-   --bg-1        : #FFFFFF   pure card surface
-   --bg-2        : #F5F2FF   amethyst tint hover
-   --bg-3        : #EDE8FF   active state
-
-   --amethyst    : #7C3AED   primary vivid violet
-   --text-0      : #1E1B4B   deep indigo-black (primary)
-   --text-1      : #6B7280   slate (secondary)
-   --text-2      : #9CA3AF   light gray (muted)
-  ══════════════════════════════════════════════════════
-*/
+/* Morning Paper — CSS variables set dynamically by DashboardLayout */
+:root {
+  --mp-sidebar:      #F1E6FF;
+  --mp-body:         #FDFAFF;
+  --mp-accent:       #7B2D8B;
+  --mp-pop:          #F72585;
+  --mp-text:         #2D0A3D;
+  --mp-sidebar-text: #2D0A3D;
+  --mp-card-border:  rgba(123,45,139,0.12);
+  --mp-nav-bg:       rgba(123,45,139,0.10);
+  --mp-a05:          rgba(123,45,139,0.05);
+  --mp-a10:          rgba(123,45,139,0.10);
+  --mp-a20:          rgba(123,45,139,0.20);
+}
 
 @layer base {
   * { box-sizing: border-box; }
@@ -29,8 +28,8 @@
   }
 
   body {
-    background-color: #FAFAF8;
-    color: #1E1B4B;
+    background-color: var(--mp-body);
+    color: var(--mp-text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -38,257 +37,283 @@
 
   ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #DDD6FE; border-radius: 9999px; }
-  ::-webkit-scrollbar-thumb:hover { background: #C4B5FD; }
+  ::-webkit-scrollbar-thumb { background: var(--mp-accent); border-radius: 99px; opacity: 0.4; }
 
   ::selection {
-    background: rgba(124, 58, 237, 0.14);
-    color: #1E1B4B;
-  }
-}
-
-@layer utilities {
-  /* Redefine font-display to use Lora everywhere it's referenced */
-  .font-display {
-    font-family: 'Lora', Georgia, serif;
+    background: var(--mp-a20);
+    color: var(--mp-text);
   }
 }
 
 @layer components {
 
-  /* ── Cards & Surfaces ─────────────────────────────── */
-  .glass-card {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(109, 40, 217, 0.09);
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(109,40,217,0.06), 0 4px 16px rgba(109,40,217,0.04);
+  /* ── Morning Paper Card ──────────────────────────── */
+  .mp-card {
+    background: color-mix(in srgb, var(--mp-body) 60%, white);
+    border: 0.5px solid var(--mp-card-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
 
-  .gradient-border { position: relative; }
-  .gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(124,58,237,0.30) 0%, rgba(192,38,211,0.18) 50%, transparent 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  .mp-card-white {
+    background: white;
+    border: 0.5px solid var(--mp-card-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
 
-  /* ── Sidebar Navigation ───────────────────────────── */
-  .sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    color: #9CA3AF;
-    font-size: 0.875rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    border: 1px solid transparent;
-    transition: color 0.15s ease, background-color 0.15s ease;
-    text-decoration: none;
-  }
-  .sidebar-link:hover {
-    color: #4C1D95;
-    background-color: #F5F2FF;
-  }
-  .sidebar-link.active {
-    color: #7C3AED;
-    background-color: rgba(124, 58, 237, 0.08);
-    border-color: rgba(124, 58, 237, 0.16);
-  }
-
-  /* ── Stat Cards ───────────────────────────────────── */
-  .stat-card {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(109, 40, 217, 0.09);
-    border-radius: 1rem;
-    padding: 1.25rem;
-    position: relative;
-    transition: border-color 0.20s ease, box-shadow 0.20s ease;
-    box-shadow: 0 1px 3px rgba(109,40,217,0.05);
-  }
-  .stat-card:hover {
-    border-color: rgba(124, 58, 237, 0.22);
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.10);
-  }
-
-  /* ── Typography ───────────────────────────────────── */
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1E1B4B;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    font-family: 'Lora', Georgia, serif;
-  }
-
-  /* Fixed: was #C4B5FD (nearly invisible on white) → now readable violet */
-  .section-label {
-    font-size: 0.625rem;
-    font-weight: 700;
+  /* ── Section label (newspaper ruled style) ──────── */
+  .mp-label {
+    font-size: 9px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.18em;
-    color: #7C3AED;
+    color: var(--mp-accent);
   }
 
-  /* ── Status Badges ────────────────────────────────── */
-  .badge-hot {
-    background-color: rgba(225, 29, 72, 0.08);
-    color: #E11D48;
-    border: 1px solid rgba(225, 29, 72, 0.18);
-    font-size: 0.7rem; padding: 0.125rem 0.5rem;
-    border-radius: 9999px; font-weight: 600;
-  }
-  .badge-warm {
-    background-color: rgba(217, 119, 6, 0.08);
-    color: #D97706;
-    border: 1px solid rgba(217, 119, 6, 0.18);
-    font-size: 0.7rem; padding: 0.125rem 0.5rem;
-    border-radius: 9999px; font-weight: 600;
-  }
-  .badge-cold {
-    background-color: rgba(2, 132, 199, 0.08);
-    color: #0284C7;
-    border: 1px solid rgba(2, 132, 199, 0.18);
-    font-size: 0.7rem; padding: 0.125rem 0.5rem;
-    border-radius: 9999px; font-weight: 600;
+  /* ── Lora serif number / heading ────────────────── */
+  .mp-serif {
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 500;
   }
 
-  /* ── Form Inputs ──────────────────────────────────── */
-  .input-field {
-    width: 100%;
-    background-color: #FFFFFF;
-    border: 1px solid rgba(109, 40, 217, 0.14);
-    border-radius: 0.5rem;
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-    color: #1E1B4B;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .input-field::placeholder { color: #A78BFA; }
-  .input-field:focus {
-    outline: none;
-    border-color: rgba(124, 58, 237, 0.50);
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
-  }
-
-  /* ── Buttons ──────────────────────────────────────── */
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5625rem 1.25rem;
-    border-radius: 0.5rem;
-    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
-    color: #FFFFFF;
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+  /* ── Horizontal rule (newspaper divider) ─────────── */
+  .mp-rule {
     border: none;
-    cursor: pointer;
-    transition: opacity 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.30);
+    border-top: 0.5px solid var(--mp-card-border);
   }
-  .btn-primary:hover:not(:disabled) {
-    opacity: 0.92;
-    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.38);
-    transform: translateY(-1px);
-  }
-  .btn-primary:focus { outline: none; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.22); }
-  .btn-primary:disabled { opacity: 0.40; cursor: not-allowed; transform: none; }
 
-  .btn-secondary {
-    display: inline-flex;
+  .mp-rule-bold {
+    border: none;
+    border-top: 1.5px solid var(--mp-accent);
+  }
+
+  /* ── Sidebar nav link ────────────────────────────── */
+  .mp-nav {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5625rem 1.25rem;
-    border-radius: 0.5rem;
-    background-color: transparent;
-    border: 1px solid rgba(109, 40, 217, 0.18);
-    color: #6B7280;
-    font-size: 0.875rem;
-    font-weight: 500;
+    gap: 9px;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--mp-sidebar-text);
+    opacity: 0.60;
+    text-decoration: none;
+    border-left: 2.5px solid transparent;
+    transition: opacity 0.15s, background 0.15s;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-  .btn-secondary:hover {
-    background-color: #F5F2FF;
-    border-color: rgba(124, 58, 237, 0.28);
-    color: #4C1D95;
-  }
-  .btn-secondary:focus { outline: none; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10); }
-
-  .btn-danger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5625rem 1.25rem;
-    border-radius: 0.5rem;
-    background-color: transparent;
-    border: 1px solid rgba(225, 29, 72, 0.20);
-    color: #E11D48;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-  }
-  .btn-danger:hover {
-    background-color: rgba(225, 29, 72, 0.06);
-    border-color: rgba(225, 29, 72, 0.32);
-  }
-
-  /* ── Data Tables ──────────────────────────────────── */
-  .table-row {
-    border-bottom: 1px solid rgba(109, 40, 217, 0.05);
-    transition: background-color 0.12s ease;
-  }
-  .table-row:hover { background-color: #F9F8FF; }
-
-  .table-cell { padding: 0.875rem 1rem; font-size: 0.875rem; color: #4B5563; }
-
-  /* Fixed: was #C4B5FD (invisible on white) → now readable */
-  .table-header {
-    padding: 0.75rem 1rem;
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    color: #7C3AED;
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    width: 100%;
     text-align: left;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mp-nav:hover {
+    opacity: 1;
+    background: var(--mp-nav-bg);
+  }
+  .mp-nav.active {
+    opacity: 1;
+    border-left-color: var(--mp-sidebar-text);
+    background: var(--mp-nav-bg);
+    font-weight: 600;
+  }
+
+  /* ── Buttons ─────────────────────────────────────── */
+  .mp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
+    border: none;
+    outline: none;
+  }
+  .mp-btn-primary {
+    background: var(--mp-accent);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--mp-a20);
+  }
+  .mp-btn-primary:hover:not(:disabled) {
+    opacity: 0.88;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--mp-a20);
+  }
+  .mp-btn-primary:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+
+  .mp-btn-secondary {
+    background: transparent;
+    color: var(--mp-accent);
+    border: 0.5px solid var(--mp-card-border);
+  }
+  .mp-btn-secondary:hover { background: var(--mp-a05); }
+
+  .mp-btn-ghost {
+    background: transparent;
+    color: var(--mp-text);
+    opacity: 0.55;
+    border: none;
+  }
+  .mp-btn-ghost:hover { opacity: 1; background: var(--mp-a05); }
+
+  .mp-btn-danger {
+    background: transparent;
+    color: #dc2626;
+    border: 0.5px solid rgba(220,38,38,0.20);
+  }
+  .mp-btn-danger:hover { background: rgba(220,38,38,0.05); }
+
+  /* ── Form inputs ─────────────────────────────────── */
+  .mp-input {
+    width: 100%;
+    background: white;
+    border: 0.5px solid var(--mp-card-border);
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--mp-text);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none;
+  }
+  .mp-input:focus {
+    border-color: var(--mp-accent);
+    box-shadow: 0 0 0 2px var(--mp-a10);
+  }
+  .mp-input::placeholder { color: var(--mp-a20); opacity: 1; }
+
+  /* ── Stat card (with focus mode) ─────────────────── */
+  .mp-stat {
+    background: color-mix(in srgb, var(--mp-body) 60%, white);
+    border: 0.5px solid var(--mp-card-border);
+    border-radius: 8px;
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.30s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .mp-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--mp-accent);
+    transform: scaleY(0);
+    transition: transform 0.25s ease;
+    transform-origin: bottom;
+    border-radius: 0 0 0 8px;
+  }
+  .mp-stat.focused {
+    border-color: var(--mp-accent);
+    box-shadow: 0 6px 24px var(--mp-a10);
+    transform: scale(1.02);
+    z-index: 5;
+  }
+  .mp-stat.focused::before { transform: scaleY(1); }
+  .mp-stat.dimmed {
+    opacity: 0.28;
+    filter: blur(0.8px);
+    transform: scale(0.975);
+  }
+
+  /* ── Time River ──────────────────────────────────── */
+  .mp-river-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: grab;
+    scrollbar-width: thin;
+    scrollbar-color: var(--mp-a20) transparent;
+    position: relative;
+  }
+  .mp-river-wrap:active { cursor: grabbing; }
+
+  /* ── Badge ───────────────────────────────────────── */
+  .mp-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    border: 0.5px solid;
+  }
+
+  /* ── Table ───────────────────────────────────────── */
+  .mp-th {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--mp-accent);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--mp-card-border);
+  }
+  .mp-td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--mp-text);
+    border-bottom: 0.5px solid var(--mp-card-border);
+  }
+  .mp-tr { transition: background 0.12s; }
+  .mp-tr:hover { background: var(--mp-a05); }
+
+  /* ── Toggle ──────────────────────────────────────── */
+  .mp-toggle-track {
+    position: relative;
+    display: inline-flex;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .mp-toggle-thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
 }
 
-/* ─── CHART OVERRIDES ─────────────────────────────────── */
-.recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: #FFFFFF !important;
-  border: 1px solid rgba(124, 58, 237, 0.12) !important;
-  border-radius: 10px !important;
-  color: #1E1B4B !important;
-  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.14) !important;
+/* ── Recharts tooltip ────────────────────────────── */
+.recharts-default-tooltip {
+  background: white !important;
+  border: 0.5px solid var(--mp-card-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 12px !important;
+  color: var(--mp-text) !important;
 }
 
-/* ─── ONBOARDING STEP CONNECTOR ───────────────────────── */
-.step-connector {
-  flex: 1;
-  height: 1px;
-  background: rgba(109, 40, 217, 0.10);
+/* ── Animate entry ───────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.step-connector.completed {
-  background: linear-gradient(90deg, #7C3AED, rgba(124, 58, 237, 0.12));
-}
+.mp-fade-up { animation: fadeUp 0.3s ease forwards; }
 
-/* ─── BG AMBIENT GLOW ─────────────────────────────────── */
-.bg-pearl-pattern {
-  background-image:
-    radial-gradient(circle at 20% 20%, rgba(124,58,237,0.04) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(192,38,211,0.03) 0%, transparent 45%);
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.mp-count { animation: countUp 0.4s ease forwards; }

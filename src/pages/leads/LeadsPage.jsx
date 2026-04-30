@@ -1,181 +1,245 @@
 // src/pages/leads/LeadsPage.jsx
-// Maps to GET /api/leads, POST /api/leads/:id/claim, POST /api/leads/:id/bid
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Tabs, EmptyState, Spinner, Modal, Input, Alert, Badge } from '../../components/ui/index'
+import TimeRiver from '../../components/ui/TimeRiver'
 import { fmt, LEAD_QUALITY_CONFIG } from '../../utils/index'
-import { Target, Gavel, Zap, Clock, Lock, CheckCircle2 } from 'lucide-react'
+import { Target, Clock, CheckCircle2, Lock, Zap, List } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const LEAD_TABS = [
+const TYPE_TABS = [
   { value: 'exclusive', label: '⚡ Exclusive' },
   { value: 'broadcast', label: '📡 Broadcast' },
-  { value: 'auction', label: '🔨 Auction' },
+  { value: 'auction',   label: '🔨 Auction'   },
 ]
 
+const VIEW_TABS = [
+  { value: 'river', label: '〜 Expiry River' },
+  { value: 'cards', label: '⬜ Cards'        },
+]
+
+// Countdown to expiry
+function useCountdown(expiryDate) {
+  const [left, setLeft] = useState(0)
+  useEffect(() => {
+    const calc = () => {
+      const exp = expiryDate?.toDate ? expiryDate.toDate() : new Date(expiryDate)
+      setLeft(Math.max(0, Math.floor((exp - Date.now()) / 60000)))
+    }
+    calc()
+    const t = setInterval(calc, 30000)
+    return () => clearInterval(t)
+  }, [expiryDate])
+  return left
+}
+
 function LeadCard({ lead, onClaim, onBid, claiming, bidding }) {
-  const qCfg = LEAD_QUALITY_CONFIG[lead.quality] || LEAD_QUALITY_CONFIG.COLD
-  const [bidAmount, setBidAmount] = useState('')
+  const qCfg   = LEAD_QUALITY_CONFIG[lead.quality] || LEAD_QUALITY_CONFIG.COLD
+  const [bid, setBid]       = useState('')
   const [showBid, setShowBid] = useState(false)
-
-  const timeLeft = lead.exclusiveWindowExpiry
-    ? Math.max(0, Math.floor((new Date(lead.exclusiveWindowExpiry?.toDate?.() || lead.exclusiveWindowExpiry) - Date.now()) / 60000))
-    : null
-
-  const auctionLeft = lead.auctionEndsAt
-    ? Math.max(0, Math.floor((new Date(lead.auctionEndsAt?.toDate?.() || lead.auctionEndsAt) - Date.now()) / 60000))
-    : null
+  const timeLeft = useCountdown(lead.exclusiveWindowExpiry || lead.auctionEndsAt)
+  const urgent   = timeLeft < 30 && timeLeft > 0
 
   return (
-    <div className={clsx('glass-card gradient-border p-5 transition-all hover:border-brand-blue/20', lead.isClaimed && 'opacity-70')}>
-      {/* Header */}
+    <div
+      className="mp-card p-4 transition-all"
+      style={{ borderColor: urgent ? 'rgba(220,38,38,0.30)' : undefined }}
+    >
+      {/* Top row */}
       <div className="flex items-start justify-between mb-3">
-        <span className={clsx('text-xs px-2 py-0.5 rounded-full border font-semibold', qCfg.color)}>{qCfg.label}</span>
+        <span className={clsx('text-[10px] px-2 py-0.5 rounded-full border font-semibold', qCfg.color)}>{qCfg.label}</span>
         <div className="text-right">
-          <p className="text-lg font-display font-bold text-green-400">{fmt.currency(lead.commissionAmount)}</p>
-          <p className="text-[10px] text-slate-600">commission</p>
+          <p className="mp-serif text-lg font-semibold" style={{ color: 'var(--mp-accent)' }}>
+            {fmt.currency(lead.commissionAmount)}
+          </p>
+          <p className="text-[10px]" style={{ color: 'var(--mp-text)', opacity: 0.4 }}>commission</p>
         </div>
       </div>
 
       {/* Problem */}
-      <p className="text-sm text-slate-300 mb-3 leading-relaxed">{lead.problem || 'Customer inquiry'}</p>
+      <p className="text-sm mb-3 leading-relaxed" style={{ color: 'var(--mp-text)', opacity: 0.70 }}>
+        {lead.problem || 'Customer inquiry'}
+      </p>
 
       {/* Meta */}
-      <div className="flex flex-wrap gap-2 mb-4 text-xs">
-        {lead.urgency && <span className="text-slate-500 bg-navy-700/50 px-2 py-1 rounded">{lead.urgency}</span>}
-        {lead.estimatedValue && <span className="text-slate-500">Est. value: <span className="text-amber-400 font-semibold">{fmt.currency(lead.estimatedValue)}</span></span>}
-        {timeLeft !== null && (
-          <span className={clsx('flex items-center gap-1', timeLeft < 30 ? 'text-red-400' : 'text-amber-400')}>
+      <div className="flex flex-wrap gap-2 mb-3 text-xs">
+        {lead.urgency && (
+          <span className="px-2 py-0.5 rounded" style={{ background: 'var(--mp-a05)', color: 'var(--mp-text)', opacity: 0.6 }}>
+            {lead.urgency}
+          </span>
+        )}
+        {lead.estimatedValue && (
+          <span style={{ color: 'var(--mp-text)', opacity: 0.5 }}>
+            Est: <strong style={{ color: 'var(--mp-accent)' }}>{fmt.currency(lead.estimatedValue)}</strong>
+          </span>
+        )}
+        {timeLeft > 0 && (
+          <span className={clsx('flex items-center gap-1 font-semibold', urgent ? 'text-red-500' : 'text-amber-500')}>
             <Clock className="w-3 h-3" />{timeLeft}m left
           </span>
         )}
       </div>
 
-      {/* Customer info (if claimed) */}
+      {/* Unlocked contact */}
       {lead.isClaimed && lead.customerPhone && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3">
-          <p className="text-xs text-green-400 font-semibold flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />Contact Unlocked</p>
-          <p className="text-sm font-semibold text-slate-200 mt-1">{lead.customerName} · {lead.customerPhone}</p>
+        <div className="mb-3 p-3 rounded-md" style={{ background: 'rgba(5,150,105,0.06)', border: '0.5px solid rgba(5,150,105,0.20)' }}>
+          <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5 mb-1">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Contact Unlocked
+          </p>
+          <p className="text-sm font-medium" style={{ color: 'var(--mp-text)' }}>{lead.customerPhone}</p>
+          {lead.customerName && <p className="text-xs mt-0.5" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>{lead.customerName}</p>}
         </div>
       )}
 
-      {/* Auction info */}
-      {lead.isAuction && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-amber-400 flex items-center gap-1"><Gavel className="w-3 h-3" />Auction</span>
-            <span className="text-amber-400">{auctionLeft}m left</span>
-          </div>
-          <div className="flex justify-between mt-1 text-xs">
-            <span className="text-slate-500">Min bid: <span className="text-slate-300">{fmt.currency(lead.minimumBid)}</span></span>
-            <span className="text-slate-500">Highest: <span className="text-green-400 font-semibold">{fmt.currency(lead.currentHighestBid)}</span></span>
-          </div>
+      {/* Bid section (auction) */}
+      {showBid && (
+        <div className="flex gap-2 mb-3">
+          <Input placeholder="Your bid amount ₹" type="number" value={bid} onChange={e => setBid(e.target.value)} className="flex-1" />
+          <Button
+            onClick={() => { onBid(lead.id, Number(bid)); setShowBid(false) }}
+            loading={bidding}
+            disabled={!bid}
+            size="sm"
+          >
+            Place Bid
+          </Button>
         </div>
       )}
 
       {/* Actions */}
-      {!lead.isClaimed && !lead.isOwnLead && (
-        <div className="flex gap-2">
-          {lead.isAuction ? (
-            showBid ? (
-              <div className="flex-1 flex gap-2">
-                <Input placeholder={`Min: ${fmt.currency(lead.minimumBid)}`} value={bidAmount} onChange={e => setBidAmount(e.target.value)} className="flex-1" type="number" />
-                <Button onClick={() => onBid(lead.id, Number(bidAmount))} loading={bidding} size="sm"><Gavel className="w-3.5 h-3.5" />Bid</Button>
-              </div>
-            ) : (
-              <Button className="flex-1" onClick={() => setShowBid(true)} variant="secondary"><Gavel className="w-4 h-4" /> Place Bid</Button>
-            )
-          ) : (
-            <Button className="flex-1" onClick={() => onClaim(lead.id)} loading={claiming}>
-              <Zap className="w-4 h-4" /> Claim Lead
-            </Button>
-          )}
-        </div>
-      )}
-      {lead.isOwnLead && !lead.isClaimed && (
-        <p className="text-xs text-slate-600 flex items-center gap-1"><Lock className="w-3 h-3" /> Your exclusive lead</p>
-      )}
-      {lead.isClaimed && <p className="text-xs text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Claimed by you</p>}
+      <div className="flex gap-2">
+        {!lead.isClaimed && (
+          <Button onClick={() => onClaim(lead.id)} loading={claiming} className="flex-1" size="sm">
+            <Zap className="w-3.5 h-3.5" /> Claim Lead
+          </Button>
+        )}
+        {lead.isAuction && !lead.isClaimed && (
+          <Button variant="secondary" onClick={() => setShowBid(s => !s)} size="sm">
+            Bid →
+          </Button>
+        )}
+        {lead.isClaimed && (
+          <div className="flex-1 text-center text-xs py-1.5 rounded-md font-semibold" style={{ color: '#059669', background: 'rgba(5,150,105,0.08)' }}>
+            ✓ Claimed by you
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 export default function LeadsPage() {
   const qc = useQueryClient()
-  const [tab, setTab] = useState('exclusive')
-  const [qualityFilter, setQualityFilter] = useState('')
+  const [tab,      setTab]     = useState('exclusive')
+  const [viewMode, setViewMode] = useState('river')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['leads', tab, qualityFilter],
-    queryFn: () => leadsApi.list({ tab, quality: qualityFilter || undefined }),
-    select: r => r.data.leads,
+    queryKey: ['leads', tab],
+    queryFn:  () => leadsApi.list({ type: tab }),
+    select:   r  => r.data.leads,
     refetchInterval: 30_000,
   })
 
   const claimMutation = useMutation({
     mutationFn: (id) => leadsApi.claim(id),
-    onSuccess: () => { toast.success('Lead claimed! Customer contact unlocked.'); qc.invalidateQueries(['leads']) },
-    onError: e => toast.error(e.response?.data?.error || 'Claim failed'),
+    onSuccess: () => { toast.success('Lead claimed! Contact unlocked.'); qc.invalidateQueries(['leads']) },
+    onError:   e => toast.error(e.response?.data?.error || 'Could not claim lead'),
   })
 
   const bidMutation = useMutation({
-    mutationFn: ({ id, amount }) => leadsApi.bid(id, { bidAmount: amount }),
+    mutationFn: ({ id, amount }) => leadsApi.bid(id, { amount }),
     onSuccess: () => { toast.success('Bid placed!'); qc.invalidateQueries(['leads']) },
-    onError: e => toast.error(e.response?.data?.error || 'Bid failed'),
+    onError:   e => toast.error(e.response?.data?.error || 'Bid failed'),
   })
 
   const leads = data || []
 
+  // Convert leads to TimeRiver items — X axis = expiry time
+  const riverItems = leads
+    .filter(l => l.exclusiveWindowExpiry || l.auctionEndsAt)
+    .map(l => {
+      const expiry = l.exclusiveWindowExpiry || l.auctionEndsAt
+      const exp    = expiry?.toDate ? expiry.toDate() : new Date(expiry)
+      const minsLeft = Math.max(0, Math.floor((exp - Date.now()) / 60000))
+      return {
+        id:       l.id,
+        title:    l.quality === 'HOT' ? '🔥 Hot Lead' : l.quality === 'WARM' ? '♨️ Warm Lead' : '❄️ Cold Lead',
+        subtitle: l.problem?.slice(0, 40) + (l.problem?.length > 40 ? '…' : ''),
+        time:     expiry,
+        quality:  l.quality,
+        badge:    minsLeft < 60 ? `Expires in ${minsLeft}m` : `${fmt.currency(l.commissionAmount)}`,
+      }
+    })
+    .sort((a, b) => new Date(a.time?.toDate ? a.time.toDate() : a.time) - new Date(b.time?.toDate ? b.time.toDate() : b.time))
+
   return (
-    <DashboardLayout title="Leads" subtitle="Manage your AI-captured leads">
-      <div className="flex items-center gap-4 mb-6 flex-wrap">
-        <Tabs tabs={LEAD_TABS} active={tab} onChange={setTab} />
-        <select value={qualityFilter} onChange={e => setQualityFilter(e.target.value)} className="input-field text-xs py-2 w-36 ml-auto">
-          <option value="">All Quality</option>
-          <option value="HOT">🔥 Hot</option>
-          <option value="WARM">♨️ Warm</option>
-          <option value="MILD_OKAY">🌊 Mild OK</option>
-          <option value="COLD">❄️ Cold</option>
-        </select>
-      </div>
+    <DashboardLayout title="Leads" subtitle="Exclusive leads & marketplace">
+      <div className="space-y-5">
 
-      {tab === 'exclusive' && (
-        <Alert type="info" className="mb-4">
-          Exclusive leads are from YOUR bot's conversations. Claim them to unlock customer contact details.
+        {/* Info strip */}
+        <Alert type="info">
+          Exclusive leads are yours alone for a limited window. Claim fast — others can't see them yet.
+          Auction leads go to the highest bidder when the timer ends.
         </Alert>
-      )}
-      {tab === 'broadcast' && (
-        <Alert type="info" className="mb-4">
-          Broadcast leads are shared within your category. First business to claim wins the contact.
-        </Alert>
-      )}
-      {tab === 'auction' && (
-        <Alert type="warning" className="mb-4">
-          Auction leads go to the highest bidder. The commission amount is what you pay, not what you earn.
-        </Alert>
-      )}
 
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Spinner size="lg" /></div>
-      ) : leads.length === 0 ? (
-        <EmptyState icon="🎯" title="No leads found" description={`No ${tab} leads available right now. They'll appear when your bot captures them.`} />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {leads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onClaim={claimMutation.mutate}
-              onBid={(id, amount) => bidMutation.mutate({ id, amount })}
-              claiming={claimMutation.isPending}
-              bidding={bidMutation.isPending}
-            />
-          ))}
+        {/* Controls */}
+        <div className="flex items-center justify-between">
+          <Tabs tabs={TYPE_TABS} active={tab} onChange={setTab} />
+          <Tabs tabs={VIEW_TABS} active={viewMode} onChange={setViewMode} />
         </div>
-      )}
+
+        {/* ── Expiry Time River ──────────────────────────── */}
+        {viewMode === 'river' && (
+          <div className="mp-card p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="mp-rule-bold" style={{ width: 16 }} />
+              <p className="mp-label">Lead expiry river — bubbles move toward "now" as they expire</p>
+            </div>
+            <div className="text-xs mb-3 flex items-center gap-4" style={{ color: 'var(--mp-text)', opacity: 0.45 }}>
+              <span className="flex items-center gap-1.5"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626' }} />Hot</span>
+              <span className="flex items-center gap-1.5"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#d97706' }} />Warm</span>
+              <span className="flex items-center gap-1.5"><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#0369a1' }} />Cold</span>
+              <span className="flex items-center gap-1.5 ml-auto" style={{ color: 'var(--mp-pop)' }}>← Expired · NOW · Expiring →</span>
+            </div>
+            {isLoading ? (
+              <div className="flex justify-center py-8"><Spinner /></div>
+            ) : (
+              <TimeRiver
+                items={riverItems}
+                mode="leads"
+                emptyText="No leads with expiry times in this category"
+              />
+            )}
+          </div>
+        )}
+
+        {/* ── Cards view ─────────────────────────────────── */}
+        {viewMode === 'cards' && (
+          <div>
+            {isLoading ? (
+              <div className="flex justify-center py-12"><Spinner size="lg" /></div>
+            ) : !leads.length ? (
+              <EmptyState icon="🎯" title="No leads" description="Leads from your bot conversations will appear here" />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {leads.map(lead => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    onClaim={(id)          => claimMutation.mutate(id)}
+                    onBid={(id, amount)    => bidMutation.mutate({ id, amount })}
+                    claiming={claimMutation.isPending}
+                    bidding={bidMutation.isPending}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   )
 }

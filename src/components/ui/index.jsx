@@ -1,21 +1,21 @@
 // src/components/ui/index.jsx
-import React from 'react'
+import React, { useState } from 'react'
 import { Loader2, AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import clsx from 'clsx'
 
 // ─── Spinner ──────────────────────────────────────────────────
 export function Spinner({ size = 'md', className = '' }) {
-  const sizes = { sm: 'w-4 h-4', md: 'w-6 h-6', lg: 'w-8 h-8', xl: 'w-12 h-12' }
-  return <Loader2 className={clsx('animate-spin text-violet-500', sizes[size], className)} />
+  const s = { sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-7 h-7', xl: 'w-10 h-10' }
+  return <Loader2 className={clsx('animate-spin', s[size], className)} style={{ color: 'var(--mp-accent)' }} />
 }
 
-// ─── Loading Page ─────────────────────────────────────────────
+// ─── Page Loader ──────────────────────────────────────────────
 export function PageLoader() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#FAFAF8]">
+    <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--mp-body)' }}>
       <div className="text-center">
         <Spinner size="xl" />
-        <p className="mt-3 text-slate-400 text-sm">Loading...</p>
+        <p className="mt-3 text-sm" style={{ color: 'var(--mp-text)', opacity: 0.45 }}>Loading…</p>
       </div>
     </div>
   )
@@ -23,19 +23,15 @@ export function PageLoader() {
 
 // ─── Button ───────────────────────────────────────────────────
 export function Button({ children, variant = 'primary', size = 'md', loading = false, className = '', ...props }) {
-  const variants = {
-    primary:   'btn-primary',
-    secondary: 'btn-secondary',
-    danger:    'btn-danger',
-    ghost:     'inline-flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-violet-600 hover:bg-violet-50 text-sm transition-all',
+  const v = {
+    primary:   'mp-btn mp-btn-primary',
+    secondary: 'mp-btn mp-btn-secondary',
+    ghost:     'mp-btn mp-btn-ghost',
+    danger:    'mp-btn mp-btn-danger',
   }
-  const sizes = { sm: 'text-xs px-3 py-1.5', md: '', lg: 'text-base px-6 py-3' }
+  const s = { sm: 'text-xs px-3 py-1.5', md: '', lg: 'text-sm px-5 py-2.5' }
   return (
-    <button
-      className={clsx(variants[variant], sizes[size], className)}
-      disabled={loading || props.disabled}
-      {...props}
-    >
+    <button className={clsx(v[variant], s[size], className)} disabled={loading || props.disabled} {...props}>
       {loading && <Spinner size="sm" />}
       {children}
     </button>
@@ -47,22 +43,22 @@ export const Input = React.forwardRef(function Input({ label, error, className =
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-xs font-semibold text-violet-600 uppercase tracking-wide">
-          {label}
-        </label>
+        <label className="mp-label" style={{ color: 'var(--mp-accent)' }}>{label}</label>
       )}
       <div className="relative">
         {prefix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-400 text-sm">{prefix}</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--mp-accent)', opacity: 0.6 }}>
+            {prefix}
+          </span>
         )}
         <input
           ref={ref}
-          className={clsx('input-field', prefix && 'pl-8', error && 'border-rose-300 focus:border-rose-400', className)}
+          className={clsx('mp-input', prefix && 'pl-7', error && '!border-red-400', className)}
           {...props}
         />
       </div>
       {error && (
-        <p className="text-xs text-rose-500 flex items-center gap-1">
+        <p className="text-xs text-red-500 flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />{error}
         </p>
       )}
@@ -74,21 +70,11 @@ export const Input = React.forwardRef(function Input({ label, error, className =
 export const Select = React.forwardRef(function Select({ label, error, children, className = '', ...props }, ref) {
   return (
     <div className="flex flex-col gap-1.5">
-      {label && (
-        <label className="text-xs font-semibold text-violet-600 uppercase tracking-wide">{label}</label>
-      )}
-      <select
-        ref={ref}
-        className={clsx('input-field appearance-none cursor-pointer', error && 'border-rose-300', className)}
-        {...props}
-      >
+      {label && <label className="mp-label">{label}</label>}
+      <select ref={ref} className={clsx('mp-input appearance-none cursor-pointer', error && '!border-red-400', className)} {...props}>
         {children}
       </select>
-      {error && (
-        <p className="text-xs text-rose-500 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />{error}
-        </p>
-      )}
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   )
 })
@@ -97,20 +83,9 @@ export const Select = React.forwardRef(function Select({ label, error, children,
 export const Textarea = React.forwardRef(function Textarea({ label, error, className = '', ...props }, ref) {
   return (
     <div className="flex flex-col gap-1.5">
-      {label && (
-        <label className="text-xs font-semibold text-violet-600 uppercase tracking-wide">{label}</label>
-      )}
-      <textarea
-        ref={ref}
-        className={clsx('input-field resize-none', error && 'border-rose-300', className)}
-        rows={3}
-        {...props}
-      />
-      {error && (
-        <p className="text-xs text-rose-500 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />{error}
-        </p>
-      )}
+      {label && <label className="mp-label">{label}</label>}
+      <textarea ref={ref} className={clsx('mp-input resize-none', error && '!border-red-400', className)} rows={3} {...props} />
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   )
 })
@@ -124,20 +99,18 @@ export function Toggle({ checked, onChange, label, description }) {
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={clsx(
-          'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-400/40 mt-0.5',
-          checked ? 'bg-violet-500' : 'bg-violet-100'
-        )}
+        className="mp-toggle-track mt-0.5"
+        style={{ background: checked ? 'var(--mp-accent)' : 'var(--mp-card-border)' }}
       >
-        <span className={clsx(
-          'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200',
-          checked ? 'translate-x-4' : 'translate-x-0'
-        )} />
+        <span
+          className="mp-toggle-thumb"
+          style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
+        />
       </button>
       {(label || description) && (
         <div>
-          {label       && <p className="text-sm font-medium text-[#1E1B4B]">{label}</p>}
-          {description && <p className="text-xs text-slate-500">{description}</p>}
+          {label       && <p className="text-sm font-medium" style={{ color: 'var(--mp-text)' }}>{label}</p>}
+          {description && <p className="text-xs mt-0.5" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>{description}</p>}
         </div>
       )}
     </div>
@@ -145,15 +118,21 @@ export function Toggle({ checked, onChange, label, description }) {
 }
 
 // ─── Card ─────────────────────────────────────────────────────
-export function Card({ children, className = '', title, action }) {
+export function Card({ children, className = '', title, action, white = false }) {
   return (
-    <div className={clsx('glass-card p-5', className)}>
+    <div className={clsx(white ? 'mp-card-white' : 'mp-card', 'p-5', className)}>
       {(title || action) && (
         <div className="flex items-center justify-between mb-4">
           {title && (
-            <h3 className="font-display font-semibold text-[#1E1B4B] text-sm uppercase tracking-wide">
-              {title}
-            </h3>
+            <div>
+              <div className="mp-rule-bold mb-2" style={{ width: 24 }} />
+              <h3
+                className="text-sm font-medium leading-none"
+                style={{ fontFamily: 'Lora, Georgia, serif', color: 'var(--mp-text)' }}
+              >
+                {title}
+              </h3>
+            </div>
           )}
           {action}
         </div>
@@ -163,55 +142,55 @@ export function Card({ children, className = '', title, action }) {
   )
 }
 
-// ─── Stat Card ────────────────────────────────────────────────
-export function StatCard({ icon, label, value, sub, color = 'blue', trend }) {
-  const colors = {
-    blue:   { bg: 'bg-sky-50',     icon: 'text-sky-500',     border: 'border-sky-200'     },
-    amber:  { bg: 'bg-amber-50',   icon: 'text-amber-500',   border: 'border-amber-200'   },
-    green:  { bg: 'bg-emerald-50', icon: 'text-emerald-500', border: 'border-emerald-200' },
-    purple: { bg: 'bg-violet-50',  icon: 'text-violet-500',  border: 'border-violet-200'  },
-    red:    { bg: 'bg-rose-50',    icon: 'text-rose-500',    border: 'border-rose-200'    },
+// ─── Badge ────────────────────────────────────────────────────
+export function Badge({ children, color = 'accent', className = '' }) {
+  const styles = {
+    accent:  { background: 'var(--mp-a10)',             color: 'var(--mp-accent)',  borderColor: 'var(--mp-card-border)' },
+    green:   { background: 'rgba(5,150,105,0.08)',       color: '#059669',          borderColor: 'rgba(5,150,105,0.20)'  },
+    red:     { background: 'rgba(220,38,38,0.08)',       color: '#dc2626',          borderColor: 'rgba(220,38,38,0.20)'  },
+    amber:   { background: 'rgba(217,119,6,0.08)',       color: '#d97706',          borderColor: 'rgba(217,119,6,0.20)'  },
+    blue:    { background: 'rgba(2,132,199,0.08)',        color: '#0284c7',          borderColor: 'rgba(2,132,199,0.20)'  },
+    slate:   { background: 'rgba(100,116,139,0.08)',     color: '#64748b',          borderColor: 'rgba(100,116,139,0.20)' },
+    purple:  { background: 'rgba(124,58,237,0.08)',      color: '#7c3aed',          borderColor: 'rgba(124,58,237,0.20)' },
   }
-  const c = colors[color] || colors.blue
+  const s = styles[color] || styles.accent
   return (
-    <div className={clsx('stat-card border', c.border)}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{label}</p>
-          <p className="font-display text-2xl font-bold text-[#1E1B4B] mt-1">{value ?? '—'}</p>
-          {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
-        </div>
-        <div className={clsx('p-2.5 rounded-xl', c.bg)}>
-          <span className={clsx('w-5 h-5', c.icon)}>{icon}</span>
-        </div>
-      </div>
-      {trend !== undefined && (
-        <div className={clsx('mt-3 text-xs font-semibold', trend >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
-          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% vs last month
-        </div>
-      )}
-    </div>
+    <span className={clsx('mp-badge', className)} style={s}>{children}</span>
   )
 }
 
-// ─── Badge ────────────────────────────────────────────────────
-export function Badge({ children, color = 'blue', className = '' }) {
-  const colors = {
-    blue:   'bg-sky-50 text-sky-700 border-sky-200',
-    green:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber:  'bg-amber-50 text-amber-700 border-amber-200',
-    red:    'bg-rose-50 text-rose-700 border-rose-200',
-    purple: 'bg-violet-50 text-violet-700 border-violet-200',
-    slate:  'bg-slate-50 text-slate-600 border-slate-200',
-    cyan:   'bg-cyan-50 text-cyan-700 border-cyan-200',
-  }
+// ─── Stat Card — supports Focus Mode externally ───────────────
+export function StatCard({ icon, label, value, sub, trend, onClick, focusState, detail }) {
   return (
-    <span className={clsx(
-      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border',
-      colors[color] || colors.blue, className
-    )}>
-      {children}
-    </span>
+    <div
+      className={clsx('mp-stat', focusState === 'focused' && 'focused', focusState === 'dimmed' && 'dimmed')}
+      onClick={onClick}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <p className="mp-label">{label}</p>
+        <span style={{ color: 'var(--mp-accent)', opacity: 0.5, fontSize: 16 }}>{icon}</span>
+      </div>
+      <p className="mp-serif text-2xl leading-none mt-2" style={{ color: 'var(--mp-text)' }}>
+        {value ?? '—'}
+      </p>
+      {sub && (
+        <p className="text-xs mt-2" style={{ color: 'var(--mp-text)', opacity: 0.45 }}>{sub}</p>
+      )}
+      {trend !== undefined && (
+        <p className={clsx('text-xs font-semibold mt-2', trend >= 0 ? 'text-emerald-500' : 'text-red-500')}>
+          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% vs last month
+        </p>
+      )}
+      {/* Detail panel — shown only when focused */}
+      {focusState === 'focused' && detail && (
+        <div
+          className="mt-3 pt-3 text-xs leading-relaxed"
+          style={{ borderTop: '0.5px solid var(--mp-card-border)', color: 'var(--mp-text)', opacity: 0.65 }}
+        >
+          {detail}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -220,15 +199,16 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
   if (!open) return null
   const sizes = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#1E1B4B]/20 backdrop-blur-sm" onClick={onClose} />
-      <div className={clsx('relative w-full glass-card border border-violet-200 shadow-2xl', sizes[size])}>
-        <div className="flex items-center justify-between p-5 border-b border-violet-100">
-          <h3 className="font-display font-semibold text-[#1E1B4B]">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1 text-violet-400 hover:text-violet-700 transition-colors rounded-lg hover:bg-violet-50"
-          >
+    <div className="fixed inset-0 z-50 flex items-center justify-content-center p-4"
+      style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(2px)' }} onClick={onClose} />
+      <div className={clsx('relative w-full mp-card-white', sizes[size])} style={{ maxHeight: '90vh', overflow: 'auto' }}>
+        <div className="flex items-center justify-between p-5" style={{ borderBottom: '0.5px solid var(--mp-card-border)' }}>
+          <div>
+            <div className="mp-rule-bold mb-2" style={{ width: 20 }} />
+            <h3 className="mp-serif text-sm" style={{ color: 'var(--mp-text)' }}>{title}</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded" style={{ color: 'var(--mp-text)', opacity: 0.4 }}>
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -238,81 +218,65 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
   )
 }
 
-// ─── Empty State ──────────────────────────────────────────────
-export function EmptyState({ icon, title, description, action }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="text-4xl mb-4">{icon}</div>
-      <p className="font-display font-semibold text-[#1E1B4B] text-lg">{title}</p>
-      <p className="text-slate-500 text-sm mt-2 max-w-xs">{description}</p>
-      {action && <div className="mt-5">{action}</div>}
-    </div>
-  )
-}
-
 // ─── Alert ────────────────────────────────────────────────────
-export function Alert({ type = 'info', children }) {
+export function Alert({ type = 'info', children, className = '' }) {
   const cfg = {
-    info:    { cls: 'bg-sky-50 border-sky-200 text-sky-800',         Icon: Info         },
-    success: { cls: 'bg-emerald-50 border-emerald-200 text-emerald-800', Icon: CheckCircle2 },
-    error:   { cls: 'bg-rose-50 border-rose-200 text-rose-700',      Icon: AlertCircle  },
-    warning: { cls: 'bg-amber-50 border-amber-200 text-amber-700',   Icon: AlertCircle  },
+    info:    { bg: 'rgba(2,132,199,0.06)',   border: 'rgba(2,132,199,0.18)',   text: '#0369a1', Icon: Info         },
+    success: { bg: 'rgba(5,150,105,0.06)',   border: 'rgba(5,150,105,0.18)',   text: '#059669', Icon: CheckCircle2 },
+    error:   { bg: 'rgba(220,38,38,0.06)',   border: 'rgba(220,38,38,0.18)',   text: '#dc2626', Icon: AlertCircle  },
+    warning: { bg: 'rgba(217,119,6,0.06)',   border: 'rgba(217,119,6,0.18)',   text: '#d97706', Icon: AlertCircle  },
   }
-  const { cls, Icon } = cfg[type] || cfg.info
+  const { bg, border, text, Icon } = cfg[type] || cfg.info
   return (
-    <div className={clsx('flex items-start gap-2.5 p-3.5 rounded-xl border text-sm', cls)}>
+    <div
+      className={clsx('flex items-start gap-2.5 p-3.5 rounded-md text-xs leading-relaxed', className)}
+      style={{ background: bg, border: `0.5px solid ${border}`, color: text }}
+    >
       <Icon className="w-4 h-4 mt-0.5 shrink-0" />
       <span>{children}</span>
     </div>
   )
 }
 
-// ─── Table ────────────────────────────────────────────────────
-export function Table({ headers, children, loading, empty }) {
+// ─── Empty State ──────────────────────────────────────────────
+export function EmptyState({ icon, title, description, action }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-violet-100">
-            {headers.map((h) => (
-              <th key={h} className="table-header">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={headers.length} className="py-12 text-center">
-                <Spinner className="mx-auto" />
-              </td>
-            </tr>
-          ) : children}
-        </tbody>
-      </table>
-      {!loading && !children && empty && (
-        <div className="py-8 text-center text-slate-500 text-sm">{empty}</div>
-      )}
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="text-4xl mb-4">{icon}</div>
+      <p className="mp-serif text-base" style={{ color: 'var(--mp-text)' }}>{title}</p>
+      <p className="text-sm mt-2 max-w-xs" style={{ color: 'var(--mp-text)', opacity: 0.50 }}>{description}</p>
+      {action && <div className="mt-5">{action}</div>}
     </div>
   )
 }
 
-// ─── Avatar ───────────────────────────────────────────────────
-export function Avatar({ name, size = 'md' }) {
-  const sizes = { sm: 'w-7 h-7 text-xs', md: 'w-9 h-9 text-sm', lg: 'w-11 h-11 text-base' }
-  const initials = (name || 'U').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
-  const colors = [
-    'from-violet-500 to-purple-600',
-    'from-pink-500 to-rose-500',
-    'from-emerald-400 to-teal-500',
-    'from-amber-400 to-orange-500',
-  ]
-  const colorIdx = (name || '').charCodeAt(0) % colors.length
+// ─── Skeleton ─────────────────────────────────────────────────
+export function Skeleton({ className = '' }) {
   return (
-    <div className={clsx(
-      'rounded-full bg-gradient-to-br flex items-center justify-center font-display font-bold text-white shrink-0',
-      sizes[size], colors[colorIdx]
-    )}>
-      {initials}
+    <div
+      className={clsx('animate-pulse rounded-md', className)}
+      style={{ background: 'var(--mp-a10)' }}
+    />
+  )
+}
+
+// ─── Table ────────────────────────────────────────────────────
+export function Table({ headers, children, loading }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr>
+            {headers.map(h => <th key={h} className="mp-th">{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {loading
+            ? <tr><td colSpan={headers.length} className="py-12 text-center"><Spinner className="mx-auto" /></td></tr>
+            : children
+          }
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -320,23 +284,21 @@ export function Avatar({ name, size = 'md' }) {
 // ─── Tabs ─────────────────────────────────────────────────────
 export function Tabs({ tabs, active, onChange }) {
   return (
-    <div className="flex gap-1 bg-violet-50 p-1 rounded-xl border border-violet-100">
-      {tabs.map((tab) => (
+    <div className="flex gap-1 p-1 rounded-md" style={{ background: 'var(--mp-a05)', border: '0.5px solid var(--mp-card-border)' }}>
+      {tabs.map(tab => (
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
-          className={clsx(
-            'px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
+          className="px-3.5 py-1.5 rounded text-xs font-medium transition-all"
+          style={
             active === tab.value
-              ? 'bg-white text-violet-700 shadow-sm border border-violet-100'
-              : 'text-slate-500 hover:text-violet-600'
-          )}
+              ? { background: 'white', color: 'var(--mp-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '0.5px solid var(--mp-card-border)' }
+              : { background: 'transparent', color: 'var(--mp-text)', opacity: 0.55 }
+          }
         >
           {tab.label}
           {tab.count !== undefined && (
-            <span className={clsx('ml-1.5 text-xs', active === tab.value ? 'text-violet-400' : 'text-slate-400')}>
-              {tab.count}
-            </span>
+            <span className="ml-1.5" style={{ opacity: 0.6 }}>{tab.count}</span>
           )}
         </button>
       ))}
@@ -344,7 +306,17 @@ export function Tabs({ tabs, active, onChange }) {
   )
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────
-export function Skeleton({ className = '' }) {
-  return <div className={clsx('animate-pulse bg-violet-50 rounded-xl', className)} />
+// ─── Avatar ───────────────────────────────────────────────────
+export function Avatar({ name, size = 'md' }) {
+  const sizes = { sm: { w: 28, h: 28, font: 11 }, md: { w: 36, h: 36, font: 13 }, lg: { w: 44, h: 44, font: 15 } }
+  const s = sizes[size] || sizes.md
+  const initials = (name || 'U').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  return (
+    <div
+      className="rounded-full flex items-center justify-center font-semibold text-white shrink-0"
+      style={{ width: s.w, height: s.h, fontSize: s.font, background: 'var(--mp-accent)' }}
+    >
+      {initials}
+    </div>
+  )
 }
