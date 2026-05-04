@@ -4,21 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Morning Paper — CSS variables set dynamically by DashboardLayout */
+/*
+  Zyntell Design System — synced to LoginPage violet/fuchsia palette
+  CSS variables set dynamically by DashboardLayout
+*/
 :root {
-  --mp-sidebar:      #F1E6FF;
-  --mp-body:         #FDFAFF;
-  --mp-accent:       #7B2D8B;
-  --mp-pop:          #F72585;
-  --mp-text:         #2D0A3D;
-  --mp-sidebar-text: #2D0A3D;
-  --mp-card-border:  rgba(123,45,139,0.12);
-  --mp-nav-bg:       rgba(123,45,139,0.10);
-  --mp-a05:          rgba(123,45,139,0.05);
-  --mp-a10:          rgba(123,45,139,0.10);
-  --mp-a20:          rgba(123,45,139,0.20);
+  --mp-sidebar:      #EDE9FE;          /* violet-100 */
+  --mp-body:         #FAFAF8;          /* warm off-white (LoginPage bg) */
+  --mp-accent:       #7C3AED;          /* violet-600 */
+  --mp-accent-mid:   #9333EA;          /* purple-600 */
+  --mp-pop:          #C026D3;          /* fuchsia-600 */
+  --mp-text:         #1E1B4B;          /* indigo-950 (LoginPage headings) */
+  --mp-text-muted:   #64748B;          /* slate-500 */
+  --mp-sidebar-text: #1E1B4B;
+  --mp-card-border:  rgba(124,58,237,0.12);
+  --mp-nav-bg:       rgba(124,58,237,0.08);
+  --mp-a05:          rgba(124,58,237,0.05);
+  --mp-a10:          rgba(124,58,237,0.10);
+  --mp-a20:          rgba(124,58,237,0.20);
+  --mp-gradient:     linear-gradient(135deg, #7C3AED 0%, #9333EA 50%, #C026D3 100%);
+  --mp-gradient-soft:linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(192,38,211,0.04) 100%);
 }
 
+/* ── Base ──────────────────────────────────────────── */
 @layer base {
   * { box-sizing: border-box; }
 
@@ -29,15 +37,23 @@
 
   body {
     background-color: var(--mp-body);
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(124,58,237,0.06) 0%, transparent 45%),
+      radial-gradient(circle at 85% 75%, rgba(192,38,211,0.04) 0%, transparent 40%);
     color: var(--mp-text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Thin violet scrollbar matching LoginPage feel */
   ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--mp-accent); border-radius: 99px; opacity: 0.4; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--mp-accent);
+    border-radius: 99px;
+    opacity: 0.4;
+  }
 
   ::selection {
     background: var(--mp-a20);
@@ -45,24 +61,54 @@
   }
 }
 
+/* ── Components ────────────────────────────────────── */
 @layer components {
 
-  /* ── Morning Paper Card ──────────────────────────── */
+  /* ── Cards ──────────────────────────────────────── */
   .mp-card {
     background: color-mix(in srgb, var(--mp-body) 60%, white);
     border: 0.5px solid var(--mp-card-border);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .mp-card:hover {
+    box-shadow: 0 4px 20px var(--mp-a10);
   }
 
   .mp-card-white {
     background: white;
     border: 0.5px solid var(--mp-card-border);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .mp-card-white:hover {
+    box-shadow: 0 4px 20px var(--mp-a10);
   }
 
-  /* ── Section label (newspaper ruled style) ──────── */
+  /* Gradient-border card (matches LoginPage feature cards) */
+  .mp-card-gradient {
+    background: white;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .mp-card-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    padding: 0.5px;
+    background: var(--mp-gradient);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* ── Labels & typography ────────────────────────── */
   .mp-label {
     font-size: 9px;
     font-weight: 600;
@@ -71,13 +117,12 @@
     color: var(--mp-accent);
   }
 
-  /* ── Lora serif number / heading ────────────────── */
   .mp-serif {
     font-family: 'Lora', Georgia, serif;
     font-weight: 500;
   }
 
-  /* ── Horizontal rule (newspaper divider) ─────────── */
+  /* ── Dividers ────────────────────────────────────── */
   .mp-rule {
     border: none;
     border-top: 0.5px solid var(--mp-card-border);
@@ -94,14 +139,16 @@
     align-items: center;
     gap: 9px;
     padding: 7px 10px;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 12.5px;
     font-weight: 400;
     color: var(--mp-sidebar-text);
     opacity: 0.60;
     text-decoration: none;
     border-left: 2.5px solid transparent;
-    transition: opacity 0.15s, background 0.15s;
+    transition: opacity 0.2s cubic-bezier(0.22,1,0.36,1),
+                background 0.2s cubic-bezier(0.22,1,0.36,1),
+                transform  0.2s cubic-bezier(0.22,1,0.36,1);
     cursor: pointer;
     background: none;
     border-top: none;
@@ -114,12 +161,14 @@
   .mp-nav:hover {
     opacity: 1;
     background: var(--mp-nav-bg);
+    transform: translateX(2px);
   }
   .mp-nav.active {
     opacity: 1;
-    border-left-color: var(--mp-sidebar-text);
-    background: var(--mp-nav-bg);
+    border-left-color: var(--mp-accent);
+    background: var(--mp-a10);
     font-weight: 600;
+    color: var(--mp-accent);
   }
 
   /* ── Buttons ─────────────────────────────────────── */
@@ -129,105 +178,177 @@
     justify-content: center;
     gap: 6px;
     padding: 7px 16px;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
-    transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
+    transition:
+      opacity     0.15s ease,
+      transform   0.15s cubic-bezier(0.22,1,0.36,1),
+      box-shadow  0.15s ease;
     border: none;
     outline: none;
   }
+
+  /* Primary — matches LoginPage sign-in button feel */
   .mp-btn-primary {
-    background: var(--mp-accent);
+    background: var(--mp-gradient);
     color: #fff;
     box-shadow: 0 2px 8px var(--mp-a20);
   }
   .mp-btn-primary:hover:not(:disabled) {
-    opacity: 0.88;
+    opacity: 0.90;
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px var(--mp-a20);
+    box-shadow: 0 6px 20px var(--mp-a20);
   }
-  .mp-btn-primary:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+  .mp-btn-primary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+  }
+  .mp-btn-primary:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    transform: none;
+  }
 
   .mp-btn-secondary {
     background: transparent;
     color: var(--mp-accent);
     border: 0.5px solid var(--mp-card-border);
+    transition: background 0.15s ease, transform 0.15s cubic-bezier(0.22,1,0.36,1);
   }
-  .mp-btn-secondary:hover { background: var(--mp-a05); }
+  .mp-btn-secondary:hover {
+    background: var(--mp-a05);
+    transform: translateY(-1px);
+  }
 
   .mp-btn-ghost {
     background: transparent;
     color: var(--mp-text);
     opacity: 0.55;
     border: none;
+    transition: opacity 0.15s ease, background 0.15s ease;
   }
-  .mp-btn-ghost:hover { opacity: 1; background: var(--mp-a05); }
+  .mp-btn-ghost:hover {
+    opacity: 1;
+    background: var(--mp-a05);
+  }
 
   .mp-btn-danger {
     background: transparent;
     color: #dc2626;
     border: 0.5px solid rgba(220,38,38,0.20);
+    transition: background 0.15s ease, transform 0.15s cubic-bezier(0.22,1,0.36,1);
   }
-  .mp-btn-danger:hover { background: rgba(220,38,38,0.05); }
+  .mp-btn-danger:hover {
+    background: rgba(220,38,38,0.05);
+    transform: translateY(-1px);
+  }
 
   /* ── Form inputs ─────────────────────────────────── */
   .mp-input {
     width: 100%;
     background: white;
     border: 0.5px solid var(--mp-card-border);
-    border-radius: 5px;
+    border-radius: 8px;
     padding: 8px 12px;
     font-size: 13px;
     color: var(--mp-text);
     font-family: 'DM Sans', sans-serif;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition:
+      border-color 0.2s ease,
+      box-shadow   0.2s ease,
+      transform    0.15s cubic-bezier(0.22,1,0.36,1);
     appearance: none;
   }
   .mp-input:focus {
     border-color: var(--mp-accent);
-    box-shadow: 0 0 0 2px var(--mp-a10);
+    box-shadow: 0 0 0 3px var(--mp-a10);
+    transform: translateY(-0.5px);
   }
-  .mp-input::placeholder { color: var(--mp-a20); opacity: 1; }
+  .mp-input::placeholder {
+    color: var(--mp-a20);
+    opacity: 1;
+  }
 
-  /* ── Stat card (with focus mode) ─────────────────── */
+  /* LoginPage-style input — same pattern as .input-field */
+  .input-field {
+    width: 100%;
+    background: white;
+    border: 0.5px solid var(--mp-card-border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--mp-text);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow   0.2s ease;
+    appearance: none;
+  }
+  .input-field:focus {
+    border-color: var(--mp-accent);
+    box-shadow: 0 0 0 3px var(--mp-a10);
+  }
+  .input-field::placeholder {
+    color: #94A3B8; /* slate-400 */
+  }
+
+  /* ── Stat card (focus mode) ──────────────────────── */
   .mp-stat {
     background: color-mix(in srgb, var(--mp-body) 60%, white);
     border: 0.5px solid var(--mp-card-border);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 18px 16px;
     cursor: pointer;
     transition: all 0.30s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     overflow: hidden;
   }
+
+  /* Gradient left-bar reveal */
   .mp-stat::before {
     content: '';
     position: absolute;
     top: 0; left: 0;
     width: 3px; height: 100%;
-    background: var(--mp-accent);
+    background: var(--mp-gradient);
     transform: scaleY(0);
-    transition: transform 0.25s ease;
+    transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
     transform-origin: bottom;
-    border-radius: 0 0 0 8px;
+    border-radius: 0 0 0 12px;
   }
+
+  /* Subtle shimmer overlay on hover */
+  .mp-stat::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--mp-gradient-soft);
+    opacity: 0;
+    border-radius: 12px;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
   .mp-stat.focused {
     border-color: var(--mp-accent);
     box-shadow: 0 6px 24px var(--mp-a10);
     transform: scale(1.02);
     z-index: 5;
   }
-  .mp-stat.focused::before { transform: scaleY(1); }
+  .mp-stat.focused::before  { transform: scaleY(1); }
+  .mp-stat.focused::after   { opacity: 1; }
+
   .mp-stat.dimmed {
     opacity: 0.28;
     filter: blur(0.8px);
     transform: scale(0.975);
   }
 
-  /* ── Time River ──────────────────────────────────── */
+  /* ── Time River (horizontal scroll) ─────────────── */
   .mp-river-wrap {
     overflow-x: auto;
     overflow-y: hidden;
@@ -248,6 +369,14 @@
     font-weight: 600;
     letter-spacing: 0.03em;
     border: 0.5px solid;
+    transition: opacity 0.15s ease;
+  }
+
+  /* Violet badge variant */
+  .mp-badge-accent {
+    background: var(--mp-a10);
+    color: var(--mp-accent);
+    border-color: var(--mp-a20);
   }
 
   /* ── Table ───────────────────────────────────────── */
@@ -266,9 +395,11 @@
     font-size: 13px;
     color: var(--mp-text);
     border-bottom: 0.5px solid var(--mp-card-border);
+    transition: background 0.12s ease;
   }
-  .mp-tr { transition: background 0.12s; }
+  .mp-tr { transition: background 0.15s ease; }
   .mp-tr:hover { background: var(--mp-a05); }
+  .mp-tr:hover .mp-td { background: var(--mp-a05); }
 
   /* ── Toggle ──────────────────────────────────────── */
   .mp-toggle-track {
@@ -278,10 +409,15 @@
     height: 20px;
     border-radius: 999px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.25s cubic-bezier(0.22,1,0.36,1);
     border: none;
     padding: 0;
     flex-shrink: 0;
+    background: #E2E8F0;
+  }
+  .mp-toggle-track[data-checked="true"] {
+    background: var(--mp-accent);
+    box-shadow: 0 0 0 3px var(--mp-a10);
   }
   .mp-toggle-thumb {
     position: absolute;
@@ -289,8 +425,41 @@
     width: 16px; height: 16px;
     border-radius: 50%;
     background: white;
-    transition: transform 0.2s;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .mp-toggle-track[data-checked="true"] .mp-toggle-thumb {
+    transform: translateX(16px);
+  }
+
+  /* ── Gradient accent block (branding panel-like) ── */
+  .mp-gradient-block {
+    background: var(--mp-gradient);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mp-gradient-block::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 180px; height: 180px;
+    background: white;
+    opacity: 0.05;
+    border-radius: 50%;
+    transform: translate(40%, -40%);
+    pointer-events: none;
+  }
+  .mp-gradient-block::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100px; height: 100px;
+    background: black;
+    opacity: 0.08;
+    border-radius: 50%;
+    transform: translate(-30%, 30%);
+    pointer-events: none;
   }
 }
 
@@ -298,22 +467,98 @@
 .recharts-default-tooltip {
   background: white !important;
   border: 0.5px solid var(--mp-card-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.10) !important;
   font-family: 'DM Sans', sans-serif !important;
   font-size: 12px !important;
   color: var(--mp-text) !important;
 }
 
-/* ── Animate entry ───────────────────────────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.mp-fade-up { animation: fadeUp 0.3s ease forwards; }
+/* ── Keyframe animations ─────────────────────────── */
 
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Matches framer-motion fadeUp pattern from LoginPage */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
-.mp-count { animation: countUp 0.4s ease forwards; }
+.mp-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Stagger helpers  — apply to nth-child for cascade */
+.mp-fade-up:nth-child(1) { animation-delay: 0.05s; }
+.mp-fade-up:nth-child(2) { animation-delay: 0.10s; }
+.mp-fade-up:nth-child(3) { animation-delay: 0.15s; }
+.mp-fade-up:nth-child(4) { animation-delay: 0.20s; }
+.mp-fade-up:nth-child(5) { animation-delay: 0.25s; }
+.mp-fade-up:nth-child(6) { animation-delay: 0.30s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.mp-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Stat number count-up feel */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.mp-count {
+  animation: countUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Slide in from left — matches LoginPage left panel entrance */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+.mp-slide-left {
+  animation: slideInLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+.mp-slide-right {
+  animation: slideInRight 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Gentle pulse for decorative blobs / loading states */
+@keyframes blobPulse {
+  0%, 100% { transform: scale(1);    opacity: 0.5; }
+  50%       { transform: scale(1.08); opacity: 0.7; }
+}
+.mp-blob-pulse {
+  animation: blobPulse 8s ease-in-out infinite;
+}
+
+/* Shimmer skeleton loader */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position:  400px 0; }
+}
+.mp-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--mp-a05) 25%,
+    var(--mp-a10) 50%,
+    var(--mp-a05) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* Spin — for loading icons */
+@keyframes spin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+.mp-spin {
+  animation: spin 0.8s linear infinite;
+}
