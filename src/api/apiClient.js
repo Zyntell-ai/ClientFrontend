@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://finalbackend-wwua.onrender.com/',
-  timeout: 15000,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 })
 
