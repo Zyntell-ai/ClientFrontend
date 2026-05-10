@@ -1,27 +1,37 @@
 // src/utils/formatters.js
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 
+const toDate = (d) => {
+  if (!d) return null
+  // Native Firestore Timestamp (client SDK)
+  if (typeof d.toDate === 'function') return d.toDate()
+  // Serialized Firestore Timestamp from REST API: { _seconds, _nanoseconds } or { seconds, nanoseconds }
+  const secs = d._seconds ?? d.seconds
+  if (typeof secs === 'number') return new Date(secs * 1000)
+  // ISO string
+  if (typeof d === 'string') return parseISO(d)
+  // Fallback
+  const dt = new Date(d)
+  return isNaN(dt.getTime()) ? null : dt
+}
+
 export const fmt = {
   currency: (n) => `₹${(n || 0).toLocaleString('en-IN')}`,
   date: (d) => {
-    if (!d) return '—'
-    const dt = d?.toDate ? d.toDate() : typeof d === 'string' ? parseISO(d) : new Date(d)
-    return format(dt, 'dd MMM yyyy')
+    const dt = toDate(d)
+    return dt ? format(dt, 'dd MMM yyyy') : '—'
   },
   datetime: (d) => {
-    if (!d) return '—'
-    const dt = d?.toDate ? d.toDate() : typeof d === 'string' ? parseISO(d) : new Date(d)
-    return format(dt, 'dd MMM, hh:mm a')
+    const dt = toDate(d)
+    return dt ? format(dt, 'dd MMM, hh:mm a') : '—'
   },
   time: (d) => {
-    if (!d) return '—'
-    const dt = d?.toDate ? d.toDate() : typeof d === 'string' ? parseISO(d) : new Date(d)
-    return format(dt, 'hh:mm a')
+    const dt = toDate(d)
+    return dt ? format(dt, 'hh:mm a') : '—'
   },
   ago: (d) => {
-    if (!d) return '—'
-    const dt = d?.toDate ? d.toDate() : typeof d === 'string' ? parseISO(d) : new Date(d)
-    return formatDistanceToNow(dt, { addSuffix: true })
+    const dt = toDate(d)
+    return dt ? formatDistanceToNow(dt, { addSuffix: true }) : '—'
   },
   phone: (p) => p || '—',
   percent: (n) => `${n || 0}%`,

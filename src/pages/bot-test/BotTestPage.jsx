@@ -50,8 +50,28 @@ const SCENARIOS = {
   ],
 }
 
-function Bubble({ msg }) {
+// Parse numbered options from a bot message (dates or time slots)
+function parseSlotOptions(text) {
+  const lines = text.split('\n')
+  const options = []
+  for (const line of lines) {
+    const m = line.match(/^(\d+)\.\s+(.+)$/)
+    if (m) {
+      const label = m[2].trim()
+      // Time slot "9:00 AM" / "1:30 PM" → send as-is (parsed by TIME_SELECT)
+      // Date "Monday, 11 May" → extract "11 May" (parsed by DATE_SELECT pattern)
+      const dateM = label.match(/(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i)
+      const sendText = dateM ? `${dateM[1]} ${dateM[2]}` : label
+      options.push({ num: parseInt(m[1]), label, sendText })
+    }
+  }
+  return options.length >= 2 ? options : []
+}
+
+function Bubble({ msg, onSend, disabled }) {
   const isBot = msg.role === 'bot'
+  const options = isBot ? parseSlotOptions(msg.text) : []
+
   if (msg.role === 'system') {
     return (
       <div className="flex justify-center my-1.5">
@@ -62,25 +82,41 @@ function Bubble({ msg }) {
     )
   }
   return (
-    <div className={clsx('flex mb-2.5', isBot ? 'justify-start' : 'justify-end')}>
-      {isBot && (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shrink-0 mr-2 mt-1">
-          <Bot style={{ width: 15, height: 15 }} className="text-white" />
-        </div>
-      )}
-      <div className={clsx(
-        'max-w-[76%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm',
-        isBot
-          ? 'bg-[#1f2c33] text-slate-200 rounded-tl-sm border border-white/5'
-          : 'bg-[#005c4b] text-white rounded-tr-sm'
-      )}>
-        <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-        <div className={clsx('flex items-center gap-1 justify-end mt-1 text-[10px]',
-          isBot ? 'text-slate-600' : 'text-green-200/60')}>
-          {msg.time}
-          {!isBot && (msg.sent ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />)}
+    <div className={clsx('flex flex-col mb-2.5', isBot ? 'items-start' : 'items-end')}>
+      <div className={clsx('flex', isBot ? 'justify-start' : 'justify-end')}>
+        {isBot && (
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shrink-0 mr-2 mt-1">
+            <Bot style={{ width: 15, height: 15 }} className="text-white" />
+          </div>
+        )}
+        <div className={clsx(
+          'max-w-[76%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm',
+          isBot
+            ? 'bg-[#1f2c33] text-slate-200 rounded-tl-sm border border-white/5'
+            : 'bg-[#005c4b] text-white rounded-tr-sm'
+        )}>
+          <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+          <div className={clsx('flex items-center gap-1 justify-end mt-1 text-[10px]',
+            isBot ? 'text-slate-600' : 'text-green-200/60')}>
+            {msg.time}
+            {!isBot && (msg.sent ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />)}
+          </div>
         </div>
       </div>
+      {options.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-1.5 ml-9">
+          {options.map(opt => (
+            <button
+              key={opt.num}
+              onClick={() => onSend(opt.sendText)}
+              disabled={disabled}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#005c4b]/20 text-[#00c49e] border border-[#00a884]/40 hover:bg-[#005c4b]/50 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -249,7 +285,7 @@ export default function BotTestPage() {
                   {format(new Date(), 'dd MMM yyyy')} · TEST MODE
                 </span>
               </div>
-              {messages.map(m => <Bubble key={m.id} msg={m} />)}
+              {messages.map(m => <Bubble key={m.id} msg={m} onSend={send} disabled={isTyping} />)}
               {isTyping && <Typing />}
               <div ref={scrollRef} />
             </div>
