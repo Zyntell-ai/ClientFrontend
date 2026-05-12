@@ -5,7 +5,7 @@ import { bookingsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Badge, Modal, Input, Select, Tabs, EmptyState, Spinner, Avatar, Alert } from '../../components/ui/index'
 import TimeRiver from '../../components/ui/TimeRiver'
-import { fmt, BOOKING_STATUS_COLORS } from '../../utils/index'
+import { fmt, BOOKING_STATUS_COLORS, toDate } from '../../utils/index'
 import { Calendar, CheckCircle2, XCircle, KeyRound, List, Waves } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -158,8 +158,8 @@ export default function BookingsPage() {
 
   const todayBookings = bookings
     .filter(b => {
-      const d = b.scheduledAt?.toDate ? b.scheduledAt.toDate() : new Date(b.scheduledAt)
-      return d.getFullYear() === todayY && d.getMonth() === todayM && d.getDate() === todayD
+      const d = toDate(b.scheduledAt)
+      return d && d.getFullYear() === todayY && d.getMonth() === todayM && d.getDate() === todayD
     })
     .map(b => ({
       id:       b.id,

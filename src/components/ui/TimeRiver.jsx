@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { format, differenceInMinutes, startOfDay, addMinutes } from 'date-fns'
 import clsx from 'clsx'
+import { toDate } from '../../utils/index'
 
 const HOUR_PX = 120   // pixels per hour
 const START_H = 7     // 7 AM
@@ -161,7 +162,7 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
 
         {/* Bubbles */}
         {withLanes.map((item) => {
-          const x = timeToX(new Date(item.time?.toDate ? item.time.toDate() : item.time))
+          const x = timeToX(toDate(item.time) || new Date())
           const above = item.lane === 'above'
           const isFocused = focused === item.id
 
@@ -217,7 +218,7 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
                 }}
               >
                 <p style={{ fontSize: 9, opacity: 0.7, marginBottom: 2, letterSpacing: '0.05em' }}>
-                  {format(new Date(item.time?.toDate ? item.time.toDate() : item.time), 'hh:mm a')}
+                  {format(toDate(item.time) || new Date(), 'hh:mm a')}
                 </p>
                 <p style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.3 }}>
                   {item.title}

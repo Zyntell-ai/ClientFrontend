@@ -1,7 +1,7 @@
 // src/utils/formatters.js
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 
-const toDate = (d) => {
+export const toDate = (d) => {
   if (!d) return null
   // Native Firestore Timestamp (client SDK)
   if (typeof d.toDate === 'function') return d.toDate()
