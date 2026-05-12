@@ -150,12 +150,16 @@ export default function BookingsPage() {
 
   const bookings = data || []
 
-  // Convert bookings to TimeRiver items (today's bookings only)
+  // Convert bookings to TimeRiver items (today's bookings — all statuses including COMPLETED)
   const today = new Date()
+  const todayY = today.getFullYear()
+  const todayM = today.getMonth()
+  const todayD = today.getDate()
+
   const todayBookings = bookings
     .filter(b => {
       const d = b.scheduledAt?.toDate ? b.scheduledAt.toDate() : new Date(b.scheduledAt)
-      return d.toDateString() === today.toDateString()
+      return d.getFullYear() === todayY && d.getMonth() === todayM && d.getDate() === todayD
     })
     .map(b => ({
       id:       b.id,
