@@ -1,7 +1,45 @@
+/**
+ * @file        OnboardingPage.jsx
+ * @module      Onboarding Wizard
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Multi-step onboarding wizard that collects services, staff, working hours, and bot configuration before completing setup via POST /api/onboarding/complete.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React (useState)
+ *   - react-router-dom (useNavigate)
+ *   - ../../store/authStore (useAuthStore)
+ *   - ../../api/index (onboardingApi, businessApi)
+ *   - ../../components/ui/index (Button, Input, Select, Toggle, Alert, Spinner)
+ *   - ../../utils/index (BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS, CATEGORY_LABELS)
+ *   - lucide-react (Zap, Plus, Trash2, Check, ArrowRight, ArrowLeft, Rocket)
+ *   - react-hot-toast
+ *   - clsx
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
 // src/pages/onboarding/OnboardingPage.jsx
 // Multi-step onboarding wizard — maps to POST /api/onboarding/complete
 // Steps: Services → Staff → Working Hours → Bot Config → Review & Launch
 
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
@@ -12,6 +50,11 @@ import { Zap, Plus, Trash2, Check, ArrowRight, ArrowLeft, Rocket } from 'lucide-
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+/** @type {Array<{dayOfWeek: number, isOpen: boolean, startTime: string, endTime: string}>} */
 const DEFAULT_HOURS = [
   { dayOfWeek: 0, isOpen: false, startTime: '09:00', endTime: '18:00' },
   { dayOfWeek: 1, isOpen: true, startTime: '09:00', endTime: '18:00' },
@@ -22,6 +65,7 @@ const DEFAULT_HOURS = [
   { dayOfWeek: 6, isOpen: false, startTime: '09:00', endTime: '14:00' },
 ]
 
+/** @type {Array<{id: string, label: string, icon: string}>} */
 const STEPS = [
   { id: 'services', label: 'Services', icon: '🗂️' },
   { id: 'staff', label: 'Staff', icon: '👥' },
@@ -30,14 +74,29 @@ const STEPS = [
   { id: 'launch', label: 'Launch', icon: '🚀' },
 ]
 
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    OnboardingPage
+ * @purpose     Renders the full multi-step onboarding wizard; collects services, staff, working hours, and bot configuration, then submits a combined payload to complete setup.
+ * @returns {JSX.Element}
+ */
 export default function OnboardingPage() {
   const navigate = useNavigate()
   const { business, updateBusiness } = useAuthStore()
+
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
+
+  // [STATE]: Wizard navigation and async flags
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Form data
+  // [STATE]: Form data for each wizard step
   const [services, setServices] = useState([
     { name: '', nameRegional: '', description: '', duration: 30, price: '', priceMin: '', priceMax: '' }
   ])
@@ -53,15 +112,69 @@ export default function OnboardingPage() {
   const catLabel = CATEGORY_LABELS[category] || 'Business'
   const catIcon = CATEGORY_ICONS[category] || '🏢'
 
+  // ─────────────────────────────────────────
+  // CORE LOGIC / HANDLER FUNCTIONS
+  // ─────────────────────────────────────────
+
   // ─── Services ─────────────────────────────────────────────
+  /**
+   * @function    addService
+   * @purpose     Appends a blank service entry to the services list.
+   * @returns {void}
+   */
   const addService = () => setServices(s => [...s, { name: '', nameRegional: '', description: '', duration: 30, price: '', priceMin: '', priceMax: '' }])
+
+  /**
+   * @function    removeService
+   * @purpose     Removes the service at the given index.
+   * @param  {number} i - Index of the service to remove
+   * @returns {void}
+   */
   const removeService = (i) => setServices(s => s.filter((_, idx) => idx !== i))
+
+  /**
+   * @function    updateService
+   * @purpose     Updates a single field on the service at the given index.
+   * @param  {number} i   - Service index
+   * @param  {string} key - Field key to update
+   * @param  {*}      val - New value
+   * @returns {void}
+   */
   const updateService = (i, key, val) => setServices(s => s.map((svc, idx) => idx === i ? { ...svc, [key]: val } : svc))
 
   // ─── Staff ────────────────────────────────────────────────
+  /**
+   * @function    addStaff
+   * @purpose     Appends a blank staff member entry to the staff list.
+   * @returns {void}
+   */
   const addStaff = () => setStaff(s => [...s, { name: '', role: '', specialization: '', phone: '', availableDays: [1, 2, 3, 4, 5] }])
+
+  /**
+   * @function    removeStaff
+   * @purpose     Removes the staff member at the given index.
+   * @param  {number} i - Index of the staff member to remove
+   * @returns {void}
+   */
   const removeStaff = (i) => setStaff(s => s.filter((_, idx) => idx !== i))
+
+  /**
+   * @function    updateStaff
+   * @purpose     Updates a single field on the staff member at the given index.
+   * @param  {number} i   - Staff index
+   * @param  {string} key - Field key to update
+   * @param  {*}      val - New value
+   * @returns {void}
+   */
   const updateStaff = (i, key, val) => setStaff(s => s.map((m, idx) => idx === i ? { ...m, [key]: val } : m))
+
+  /**
+   * @function    toggleStaffDay
+   * @purpose     Toggles a day-of-week availability for the given staff member.
+   * @param  {number} staffIdx - Staff member index
+   * @param  {number} day      - Day index (0 = Sunday … 6 = Saturday)
+   * @returns {void}
+   */
   const toggleStaffDay = (staffIdx, day) => {
     setStaff(s => s.map((m, idx) => {
       if (idx !== staffIdx) return m
@@ -71,10 +184,24 @@ export default function OnboardingPage() {
   }
 
   // ─── Hours ────────────────────────────────────────────────
+  /**
+   * @function    updateHour
+   * @purpose     Updates a single field on the working-hours entry for the given day index.
+   * @param  {number} dayIdx - Hours array index
+   * @param  {string} key    - Field to update (isOpen, startTime, endTime)
+   * @param  {*}      val    - New value
+   * @returns {void}
+   */
   const updateHour = (dayIdx, key, val) => setHours(h => h.map((d, i) => i === dayIdx ? { ...d, [key]: val } : d))
 
+  /**
+   * @function    validateStep
+   * @purpose     Validates the current wizard step before allowing forward navigation.
+   * @returns {boolean} True if the step is valid, false otherwise
+   */
   const validateStep = () => {
     if (step === 0) {
+      // [VALIDATION]: All services must have a name and duration
       const invalid = services.some(s => !s.name.trim() || !s.duration)
       if (invalid) { setError('Please fill service name and duration for all services'); return false }
     }
@@ -82,15 +209,26 @@ export default function OnboardingPage() {
     return true
   }
 
+  /**
+   * @function    handleNext
+   * @purpose     Validates the current step and advances the wizard by one step.
+   * @returns {void}
+   */
   const handleNext = () => {
     if (!validateStep()) return
     setStep(s => Math.min(s + 1, STEPS.length - 1))
   }
 
+  /**
+   * @function    handleComplete
+   * @purpose     Submits the full onboarding payload to the API, updates auth store, and navigates to the dashboard.
+   * @returns {Promise<void>}
+   */
   const handleComplete = async () => {
     setLoading(true)
     setError('')
     try {
+      // [DATA TRANSFORM]: Coerce string inputs to numbers before submission
       const payload = {
         services: services.map(s => ({
           ...s,
@@ -103,7 +241,9 @@ export default function OnboardingPage() {
         workingHours: hours,
         ...botConfig,
       }
+      // [API CALL]: Submit complete onboarding payload
       const res = await onboardingApi.complete(payload)
+      // [STATE]: Mark setup as completed in global auth store
       updateBusiness({ setupCompleted: true, botTrainingScore: res.data.botTrainingScore })
       toast.success('🎉 Bot is ready! Welcome to Zyntell.')
       navigate('/dashboard')

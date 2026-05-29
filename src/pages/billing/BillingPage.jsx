@@ -1,3 +1,46 @@
+/**
+ * @file        BillingPage.jsx
+ * @module      Billing
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Shows the current subscription plan, outstanding invoice, plan upgrade options, and invoice history; initiates payment via Razorpay.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState
+ *   - @tanstack/react-query (useQuery, useMutation)
+ *   - billingApi
+ *   - DashboardLayout
+ *   - UI components: Button, Card, Badge, StatCard, Alert, Modal, Input
+ *   - utils: fmt
+ *   - lucide-react icons
+ *   - react-hot-toast
+ *   - clsx
+ *
+ * @sideEffects
+ *   - GET /api/billing/current — fetches active plan and current invoice
+ *   - GET /api/billing/invoices — fetches invoice history list
+ *   - POST /api/billing/pay — initiates Razorpay payment for the current invoice
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/billing/BillingPage.jsx
 import React, { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
@@ -9,18 +52,40 @@ import { Receipt, CreditCard, DollarSign, Calendar, ArrowRight } from 'lucide-re
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [UI]: Static plan definitions displayed in the upgrade section
 const PLANS = [
   { id: 'starter', name: 'Starter', price: 0, desc: '14-day trial — 50 conversations', features: ['50 bot conversations', 'WhatsApp bot', 'Basic analytics', 'Email support'] },
   { id: 'plus', name: 'Plus', price: 1500, desc: '₹1,500/month — most popular', features: ['Unlimited conversations', 'Voice bot included', 'Advanced analytics', 'Priority support', 'Lead marketplace access'] },
   { id: 'pro', name: 'Pro', price: 3000, desc: '₹3,000/month — full features', features: ['Everything in Plus', 'Multi-location', 'Custom bot persona', 'Dedicated account manager', 'API access', 'Custom integrations'] },
 ]
 
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    BillingPage
+ * @purpose     Renders the billing dashboard — active plan card, invoice details, upgrade plans, invoice history, and a payment modal
+ * @returns {JSX.Element}
+ */
 export default function BillingPage() {
+  // [STATE]: Controls visibility of the payment modal
   const [showPay, setShowPay] = useState(false)
 
+  // [API CALL]: Fetch current plan and outstanding invoice
   const { data: current, isLoading: cl } = useQuery({ queryKey: ['billing-current'], queryFn: billingApi.current, select: r => r.data })
+  // [API CALL]: Fetch paginated invoice history
   const { data: invoices, isLoading: il } = useQuery({ queryKey: ['billing-invoices'], queryFn: billingApi.invoices, select: r => r.data.invoices })
 
+  // [API CALL]: Mutation to initiate Razorpay payment for the outstanding invoice
   const payMutation = useMutation({
     mutationFn: (d) => billingApi.pay(d),
     onSuccess: () => { toast.success('Payment initiated! You will receive a confirmation shortly.'); setShowPay(false) },
@@ -33,6 +98,7 @@ export default function BillingPage() {
         {/* Current plan */}
         <div className="lg:col-span-2">
           <Card title="Current Plan">
+            {/* [GUARD]: Renders nothing while loading current plan data */}
             {cl ? null : current && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -47,6 +113,7 @@ export default function BillingPage() {
                     {current.plan === 'trial' ? 'Trial' : current.plan === 'plus' ? 'Plus' : 'Pro'}
                   </Badge>
                 </div>
+                {/* [UI]: Invoice detail block shown only when an active invoice exists */}
                 {current.invoice && (
                   <div className="border border-violet-100 rounded-lg p-4">
                     <div className="flex justify-between items-center">
@@ -61,6 +128,7 @@ export default function BillingPage() {
                         </Badge>
                       </div>
                     </div>
+                    {/* [BUSINESS RULE]: Pay Now button only shown when invoice is not yet paid */}
                     {current.invoice.status !== 'PAID' && (
                       <Button className="w-full mt-3" onClick={() => setShowPay(true)}>
                         <CreditCard className="w-4 h-4" /> Pay Now
@@ -82,6 +150,7 @@ export default function BillingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PLANS.map(({ id, name, price, desc, features }) => (
             <div key={id} className={clsx('glass-card p-5 border transition-all', id === 'plus' ? 'border-violet-300 bg-violet-50/60' : 'border-violet-100 hover:border-navy-400/50')}>
+              {/* [UI]: "Most Popular" badge only rendered for the Plus plan */}
               {id === 'plus' && <div className="text-[10px] text-violet-600 font-bold uppercase tracking-wider mb-2">Most Popular</div>}
               <p className="font-display font-bold text-[#1E1B4B] text-lg">{name}</p>
               <p className="text-2xl font-display font-extrabold text-[#1E1B4B] mt-1">
@@ -101,6 +170,7 @@ export default function BillingPage() {
 
       {/* Invoice history */}
       <Card title="Invoice History">
+        {/* [GUARD]: Renders nothing while invoice list is loading */}
         {il ? null : !invoices?.length ? (
           <p className="text-slate-500 text-sm text-center py-6">No invoices yet</p>
         ) : (
@@ -121,9 +191,11 @@ export default function BillingPage() {
         )}
       </Card>
 
+      {/* Payment modal */}
       <Modal open={showPay} onClose={() => setShowPay(false)} title="Complete Payment">
         <Alert type="info">Payment will be processed via Razorpay. You will be redirected to complete the transaction.</Alert>
         <div className="mt-4 space-y-3">
+          {/* [DATA TRANSFORM]: Breaks invoice total into plan fee + commissions for display */}
           <div className="bg-violet-50 rounded-lg p-4">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Plan Fee</span>

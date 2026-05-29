@@ -1,14 +1,64 @@
-// src/components/ui/index.jsx
+/**
+ * @file        index.jsx
+ * @module      UI Components
+ * @project     ClientFrontend
+ * @layer       Component
+ * @description Shared primitive UI components — Spinner, PageLoader, Button, Input, Select, Textarea, Toggle, Card, Badge, StatCard, Modal, Alert, EmptyState, Skeleton, Table, Tabs, and Avatar.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - react
+ *   - lucide-react (Loader2, AlertCircle, CheckCircle2, Info, X)
+ *   - clsx
+ *
+ * @sideEffects
+ *   - None
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React, { useState } from 'react'
 import { Loader2, AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// EXPORTS
+// ─────────────────────────────────────────
+
+/**
+ * @function    Spinner
+ * @purpose     Animated loading spinner with configurable size
+ * @param  {string} props.size      - Size variant: "sm" | "md" | "lg" | "xl"
+ * @param  {string} props.className - Additional CSS classes
+ * @returns {JSX.Element} Spinning Loader2 icon
+ */
 // ─── Spinner ──────────────────────────────────────────────────
 export function Spinner({ size = 'md', className = '' }) {
   const s = { sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-7 h-7', xl: 'w-10 h-10' }
   return <Loader2 className={clsx('animate-spin', s[size], className)} style={{ color: 'var(--mp-accent)' }} />
 }
 
+/**
+ * @function    PageLoader
+ * @purpose     Full-page centered loading state shown during async route bootstrapping
+ * @returns {JSX.Element} Centered spinner with "Loading…" text
+ */
 // ─── Page Loader ──────────────────────────────────────────────
 export function PageLoader() {
   return (
@@ -21,6 +71,16 @@ export function PageLoader() {
   )
 }
 
+/**
+ * @function    Button
+ * @purpose     Styled button with variant, size, and loading spinner support
+ * @param  {ReactNode} props.children  - Button label content
+ * @param  {string}    props.variant   - Visual variant: "primary" | "secondary" | "ghost" | "danger"
+ * @param  {string}    props.size      - Size variant: "sm" | "md" | "lg"
+ * @param  {boolean}   props.loading   - Shows spinner and disables button when true
+ * @param  {string}    props.className - Additional CSS classes
+ * @returns {JSX.Element} Button element
+ */
 // ─── Button ───────────────────────────────────────────────────
 export function Button({ children, variant = 'primary', size = 'md', loading = false, className = '', ...props }) {
   const v = {
@@ -38,6 +98,15 @@ export function Button({ children, variant = 'primary', size = 'md', loading = f
   )
 }
 
+/**
+ * @function    Input
+ * @purpose     Labeled text input with optional prefix icon and inline error display
+ * @param  {string}    props.label     - Input field label
+ * @param  {string}    props.error     - Validation error message
+ * @param  {string}    props.className - Additional CSS classes
+ * @param  {ReactNode} props.prefix    - Optional prefix element inside the input
+ * @returns {JSX.Element} Input field with label and error
+ */
 // ─── Input ────────────────────────────────────────────────────
 export const Input = React.forwardRef(function Input({ label, error, className = '', prefix, ...props }, ref) {
   return (
@@ -66,6 +135,15 @@ export const Input = React.forwardRef(function Input({ label, error, className =
   )
 })
 
+/**
+ * @function    Select
+ * @purpose     Labeled select dropdown with error state support
+ * @param  {string}    props.label     - Select field label
+ * @param  {string}    props.error     - Validation error message
+ * @param  {ReactNode} props.children  - Option elements
+ * @param  {string}    props.className - Additional CSS classes
+ * @returns {JSX.Element} Select element with label and error
+ */
 // ─── Select ───────────────────────────────────────────────────
 export const Select = React.forwardRef(function Select({ label, error, children, className = '', ...props }, ref) {
   return (
@@ -79,6 +157,14 @@ export const Select = React.forwardRef(function Select({ label, error, children,
   )
 })
 
+/**
+ * @function    Textarea
+ * @purpose     Labeled multi-line textarea with error state support
+ * @param  {string} props.label     - Textarea field label
+ * @param  {string} props.error     - Validation error message
+ * @param  {string} props.className - Additional CSS classes
+ * @returns {JSX.Element} Textarea element with label and error
+ */
 // ─── Textarea ─────────────────────────────────────────────────
 export const Textarea = React.forwardRef(function Textarea({ label, error, className = '', ...props }, ref) {
   return (
@@ -90,6 +176,15 @@ export const Textarea = React.forwardRef(function Textarea({ label, error, class
   )
 })
 
+/**
+ * @function    Toggle
+ * @purpose     Accessible toggle switch with optional label and description
+ * @param  {boolean}  props.checked     - Current toggle state
+ * @param  {Function} props.onChange    - Callback invoked with new boolean value
+ * @param  {string}   props.label       - Primary label text
+ * @param  {string}   props.description - Secondary description text
+ * @returns {JSX.Element} Toggle switch element
+ */
 // ─── Toggle ───────────────────────────────────────────────────
 export function Toggle({ checked, onChange, label, description }) {
   return (
@@ -117,6 +212,16 @@ export function Toggle({ checked, onChange, label, description }) {
   )
 }
 
+/**
+ * @function    Card
+ * @purpose     Content card container with optional serif title header and action slot
+ * @param  {ReactNode} props.children  - Card body content
+ * @param  {string}    props.className - Additional CSS classes
+ * @param  {string}    props.title     - Optional card title in serif typeface
+ * @param  {ReactNode} props.action    - Optional action element rendered in header
+ * @param  {boolean}   props.white     - Uses white card variant when true
+ * @returns {JSX.Element} Styled card container
+ */
 // ─── Card ─────────────────────────────────────────────────────
 export function Card({ children, className = '', title, action, white = false }) {
   return (
@@ -142,6 +247,14 @@ export function Card({ children, className = '', title, action, white = false })
   )
 }
 
+/**
+ * @function    Badge
+ * @purpose     Inline status/label badge with color variants
+ * @param  {ReactNode} props.children  - Badge text content
+ * @param  {string}    props.color     - Color variant: "accent" | "green" | "red" | "amber" | "blue" | "slate" | "purple"
+ * @param  {string}    props.className - Additional CSS classes
+ * @returns {JSX.Element} Badge span element
+ */
 // ─── Badge ────────────────────────────────────────────────────
 export function Badge({ children, color = 'accent', className = '' }) {
   const styles = {
@@ -159,6 +272,19 @@ export function Badge({ children, color = 'accent', className = '' }) {
   )
 }
 
+/**
+ * @function    StatCard
+ * @purpose     Metric display card with focus/dim state, trend indicator, and expandable detail panel
+ * @param  {ReactNode} props.icon       - Icon element or emoji
+ * @param  {string}    props.label      - Metric label
+ * @param  {string}    props.value      - Primary metric value
+ * @param  {string}    props.sub        - Secondary sub-label text
+ * @param  {number}    props.trend      - Percentage trend vs last month (positive or negative)
+ * @param  {Function}  props.onClick    - Click handler for focus mode
+ * @param  {string}    props.focusState - Focus state: "focused" | "dimmed" | undefined
+ * @param  {ReactNode} props.detail     - Detail content shown when focused
+ * @returns {JSX.Element} Stat card element
+ */
 // ─── Stat Card — supports Focus Mode externally ───────────────
 export function StatCard({ icon, label, value, sub, trend, onClick, focusState, detail }) {
   return (
@@ -181,7 +307,7 @@ export function StatCard({ icon, label, value, sub, trend, onClick, focusState, 
           {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% vs last month
         </p>
       )}
-      {/* Detail panel — shown only when focused */}
+      {/* [UI]: Detail panel — shown only when focused */}
       {focusState === 'focused' && detail && (
         <div
           className="mt-3 pt-3 text-xs leading-relaxed"
@@ -194,8 +320,19 @@ export function StatCard({ icon, label, value, sub, trend, onClick, focusState, 
   )
 }
 
+/**
+ * @function    Modal
+ * @purpose     Overlay modal dialog with backdrop, title, close button, and size variants
+ * @param  {boolean}   props.open     - Controls modal visibility
+ * @param  {Function}  props.onClose  - Callback invoked when backdrop or close button is clicked
+ * @param  {string}    props.title    - Modal dialog title
+ * @param  {ReactNode} props.children - Modal body content
+ * @param  {string}    props.size     - Size variant: "sm" | "md" | "lg" | "xl"
+ * @returns {JSX.Element|null} Modal overlay or null when closed
+ */
 // ─── Modal ────────────────────────────────────────────────────
 export function Modal({ open, onClose, title, children, size = 'md' }) {
+  // [GUARD]: Do not render the modal when not open
   if (!open) return null
   const sizes = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' }
   return (
@@ -218,6 +355,14 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
   )
 }
 
+/**
+ * @function    Alert
+ * @purpose     Contextual inline alert banner with type-specific icon and color scheme
+ * @param  {string}    props.type      - Alert type: "info" | "success" | "error" | "warning"
+ * @param  {ReactNode} props.children  - Alert message content
+ * @param  {string}    props.className - Additional CSS classes
+ * @returns {JSX.Element} Alert banner element
+ */
 // ─── Alert ────────────────────────────────────────────────────
 export function Alert({ type = 'info', children, className = '' }) {
   const cfg = {
@@ -238,6 +383,15 @@ export function Alert({ type = 'info', children, className = '' }) {
   )
 }
 
+/**
+ * @function    EmptyState
+ * @purpose     Centered empty state placeholder with icon, title, description, and optional action
+ * @param  {ReactNode} props.icon        - Emoji or icon for visual context
+ * @param  {string}    props.title       - Primary empty state heading
+ * @param  {string}    props.description - Supporting description text
+ * @param  {ReactNode} props.action      - Optional call-to-action element
+ * @returns {JSX.Element} Empty state display block
+ */
 // ─── Empty State ──────────────────────────────────────────────
 export function EmptyState({ icon, title, description, action }) {
   return (
@@ -250,6 +404,12 @@ export function EmptyState({ icon, title, description, action }) {
   )
 }
 
+/**
+ * @function    Skeleton
+ * @purpose     Animated placeholder skeleton block for loading state UI
+ * @param  {string} props.className - Additional CSS classes (controls size/shape)
+ * @returns {JSX.Element} Pulsing skeleton placeholder
+ */
 // ─── Skeleton ─────────────────────────────────────────────────
 export function Skeleton({ className = '' }) {
   return (
@@ -260,6 +420,14 @@ export function Skeleton({ className = '' }) {
   )
 }
 
+/**
+ * @function    Table
+ * @purpose     Responsive data table with configurable headers and loading state
+ * @param  {string[]}  props.headers  - Array of column header labels
+ * @param  {ReactNode} props.children - Table row (tr) elements for tbody
+ * @param  {boolean}   props.loading  - Shows spinner in place of rows when true
+ * @returns {JSX.Element} Table element with scrollable wrapper
+ */
 // ─── Table ────────────────────────────────────────────────────
 export function Table({ headers, children, loading }) {
   return (
@@ -281,6 +449,14 @@ export function Table({ headers, children, loading }) {
   )
 }
 
+/**
+ * @function    Tabs
+ * @purpose     Pill-style tab switcher with active state highlighting and optional count badges
+ * @param  {Array}    props.tabs     - Tab definitions: [{ value, label, count? }]
+ * @param  {string}   props.active   - Currently active tab value
+ * @param  {Function} props.onChange - Callback invoked with the selected tab value
+ * @returns {JSX.Element} Tab switcher element
+ */
 // ─── Tabs ─────────────────────────────────────────────────────
 export function Tabs({ tabs, active, onChange }) {
   return (
@@ -306,10 +482,18 @@ export function Tabs({ tabs, active, onChange }) {
   )
 }
 
+/**
+ * @function    Avatar
+ * @purpose     Circular avatar with initials derived from a name string
+ * @param  {string} props.name - Full name to derive initials from
+ * @param  {string} props.size - Size variant: "sm" | "md" | "lg"
+ * @returns {JSX.Element} Circular avatar element
+ */
 // ─── Avatar ───────────────────────────────────────────────────
 export function Avatar({ name, size = 'md' }) {
   const sizes = { sm: { w: 28, h: 28, font: 11 }, md: { w: 36, h: 36, font: 13 }, lg: { w: 44, h: 44, font: 15 } }
   const s = sizes[size] || sizes.md
+  // [DATA TRANSFORM]: Extract initials from name for avatar display
   const initials = (name || 'U').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
   return (
     <div

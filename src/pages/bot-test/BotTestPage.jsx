@@ -1,3 +1,49 @@
+/**
+ * @file        BotTestPage.jsx
+ * @module      Bot Test
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Renders an interactive WhatsApp-style chat UI that connects to the live bot engine so businesses can test their AI assistant in real-time before it goes to customers.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState, useEffect, useRef, useCallback
+ *   - @tanstack/react-query (useQuery)
+ *   - useAuthStore (Zustand auth store)
+ *   - businessApi
+ *   - apiClient (raw Axios instance for bot-test endpoints)
+ *   - DashboardLayout
+ *   - UI components: Alert
+ *   - utils: CATEGORY_ICONS
+ *   - lucide-react icons
+ *   - date-fns (format)
+ *   - clsx
+ *
+ * @sideEffects
+ *   - POST /api/business/bot-test — sends a message to the live bot state machine and receives a reply
+ *   - POST /api/business/bot-test (reset: true) — resets the Redis-backed conversation session
+ *   - GET /api/business/settings — fetches bot persona, tone, language, and booking config
+ *   - GET /api/business/services — fetches the service list for the info panel
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
@@ -10,11 +56,17 @@ import { Send, RotateCcw, Bot, Wifi, Check, CheckCheck, Zap, Info, ChevronDown }
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [API CALL]: Thin API object scoped to bot-test endpoints
 const botTestApi = {
   send:  (message, sessionId) => apiClient.post('/api/business/bot-test', { message, sessionId }),
   reset: (sessionId)          => apiClient.post('/api/business/bot-test', { reset: true, sessionId }),
 }
 
+// [UI]: Category-specific quick-scenario chips shown in the right panel
 const SCENARIOS = {
   healthcare: [
     { label: '🤒 Health concern',   msg: 'I have knee pain, I need to see a doctor' },
@@ -50,6 +102,16 @@ const SCENARIOS = {
   ],
 }
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    parseSlotOptions
+ * @purpose     Parses numbered date/time options from a bot reply so they can be rendered as tappable quick-reply chips
+ * @param  {string} text - Raw bot message text
+ * @returns {{ num: number, label: string, sendText: string }[]}
+ */
 // Parse numbered options from a bot message (dates or time slots)
 function parseSlotOptions(text) {
   const lines = text.split('\n')
@@ -68,6 +130,12 @@ function parseSlotOptions(text) {
   return options.length >= 2 ? options : []
 }
 
+/**
+ * @function    Bubble
+ * @purpose     Renders a single chat message bubble (bot, user, or system) with optional quick-reply slot chips
+ * @param  {{ msg: object, onSend: Function, disabled: boolean }} props
+ * @returns {JSX.Element}
+ */
 function Bubble({ msg, onSend, disabled }) {
   const isBot = msg.role === 'bot'
   const options = isBot ? parseSlotOptions(msg.text) : []
@@ -121,6 +189,11 @@ function Bubble({ msg, onSend, disabled }) {
   )
 }
 
+/**
+ * @function    Typing
+ * @purpose     Renders an animated three-dot typing indicator shown while the bot is processing a reply
+ * @returns {JSX.Element}
+ */
 function Typing() {
   return (
     <div className="flex items-center gap-2 mb-2.5">
@@ -137,6 +210,12 @@ function Typing() {
   )
 }
 
+/**
+ * @function    CollapsiblePanel
+ * @purpose     Accordion-style wrapper used in the right info panel for bot config and services sections
+ * @param  {{ title: string, icon: React.ElementType, children: React.ReactNode }} props
+ * @returns {JSX.Element}
+ */
 function CollapsiblePanel({ title, icon: Icon, children }) {
   const [open, setOpen] = useState(false)
   return (
@@ -154,29 +233,51 @@ function CollapsiblePanel({ title, icon: Icon, children }) {
   )
 }
 
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    BotTestPage
+ * @purpose     Main bot-test page — renders a WhatsApp phone mockup alongside a live bot session with quick scenarios, session stats, and collapsible config panels
+ * @returns {JSX.Element}
+ */
 export default function BotTestPage() {
   const { business } = useAuthStore()
+  // [STATE]: Ordered list of chat messages for the current session
   const [messages, setMessages] = useState([])
+  // [STATE]: Current value of the message input textarea
   const [input, setInput]       = useState('')
+  // [STATE]: Whether the bot is currently processing a reply
   const [isTyping, setIsTyping] = useState(false)
+  // [STATE]: Last error string from a failed API call
   const [error, setError]       = useState('')
+  // [STATE]: Running count of user messages sent in this session
   const [msgCount, setMsgCount] = useState(0)
 
+  // [STATE]: Stable session ID for the current conversation, scoped to business ID + timestamp
   const sessionId = useRef(`${business?.id}_${Date.now()}`)
   const scrollRef = useRef(null)
   const inputRef  = useRef(null)
 
+  // [API CALL]: Fetches bot settings (persona, tone, language, booking config)
   const { data: settings } = useQuery({
     queryKey: ['settings'],
     queryFn: businessApi.getSettings,
     select: r => r.data.settings,
   })
+  // [API CALL]: Fetches the services list to display in the collapsible info panel
   const { data: services } = useQuery({
     queryKey: ['services'],
     queryFn: businessApi.getServices,
     select: r => r.data.services,
   })
 
+  // [DATA TRANSFORM]: Derive display values from settings and business profile
   const persona   = settings?.botPersona || 'Priya'
   const catIcon   = CATEGORY_ICONS[business?.category] || '🏢'
   const scenarios = SCENARIOS[business?.category] || SCENARIOS.default
@@ -186,10 +287,12 @@ export default function BotTestPage() {
   const add = (role, text, extra = {}) =>
     setMessages(m => [...m, { id: Date.now() + Math.random(), role, text, time: ts(), ...extra }])
 
+  // [UI]: Auto-scroll to the latest message whenever messages or typing state changes
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
+  // [UI]: Inject the bot's welcome message once settings have loaded and the message list is empty
   useEffect(() => {
     if (messages.length === 0 && settings !== undefined) {
       const welcome = settings?.welcomeMessage ||
@@ -198,16 +301,25 @@ export default function BotTestPage() {
     }
   }, [settings])
 
+  /**
+   * @function    send
+   * @purpose     Sends a user message to the bot API, optimistically marks it as delivered, then appends the bot reply or an error system message
+   * @param  {string} text - Message text to send
+   * @returns {Promise<void>}
+   */
   const send = useCallback(async (text) => {
     const msg = text.trim()
+    // [GUARD]: Ignore empty input or concurrent requests while bot is typing
     if (!msg || isTyping) return
     setInput(''); setError(''); setMsgCount(c => c + 1)
     add('user', msg, { sent: false })
+    // [UI]: Mark the message as sent after a short delay to simulate delivery tick
     setTimeout(() => {
       setMessages(m => m.map((x, i) => i === m.length - 1 ? { ...x, sent: true } : x))
     }, 350)
     setIsTyping(true)
     try {
+      // [API CALL]: Forward message to live bot state machine
       const res = await botTestApi.send(msg, sessionId.current)
       setIsTyping(false)
       add('bot', res.data.reply || "I didn't understand that. Could you rephrase? 🙏")
@@ -219,8 +331,14 @@ export default function BotTestPage() {
     }
   }, [isTyping])
 
+  /**
+   * @function    reset
+   * @purpose     Clears the current conversation, resets the Redis session on the server, and re-injects the welcome message
+   * @returns {Promise<void>}
+   */
   const reset = async () => {
     setIsTyping(false); setError(''); setMsgCount(0)
+    // [API CALL]: Reset Redis conversation state for this session (silent on failure)
     try { await botTestApi.reset(sessionId.current) } catch { /* silent */ }
     sessionId.current = `${business?.id}_${Date.now()}`
     setMessages([])
@@ -232,6 +350,12 @@ export default function BotTestPage() {
     }, 300)
   }
 
+  /**
+   * @function    handleKey
+   * @purpose     Submits the message on Enter (without Shift), allowing Shift+Enter for newlines
+   * @param  {React.KeyboardEvent} e - Keyboard event from the textarea
+   * @returns {void}
+   */
   const handleKey = e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) }
   }
@@ -313,6 +437,7 @@ export default function BotTestPage() {
         {/* Right panel — light theme */}
         <div className="flex-1 min-w-0 flex flex-col gap-4 overflow-y-auto">
 
+          {/* [UI]: Surface any backend error above the panels */}
           {error && (
             <Alert type="error">
               <strong>Backend error:</strong> {error}

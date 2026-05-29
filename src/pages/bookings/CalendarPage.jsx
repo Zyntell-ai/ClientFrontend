@@ -1,3 +1,45 @@
+/**
+ * @file        CalendarPage.jsx
+ * @module      Bookings Management
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Renders a monthly calendar grid of bookings with colour-coded status dots and a selected-day detail panel.
+ *
+ * @updated     2026-05-28
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState
+ *   - @tanstack/react-query (useQuery)
+ *   - bookingsApi
+ *   - DashboardLayout
+ *   - UI components: Button, Spinner, Badge
+ *   - utils: fmt, BOOKING_STATUS_COLORS
+ *   - react-router-dom (Link)
+ *   - date-fns: format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths
+ *   - lucide-react icons
+ *   - clsx
+ *
+ * @sideEffects
+ *   - GET /api/bookings/view/calendar — fetches bookings for the displayed month range
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/bookings/CalendarPage.jsx
 // Maps to GET /api/bookings/view/calendar
 import React, { useState } from 'react'
@@ -14,6 +56,11 @@ import {
   eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths
 } from 'date-fns'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [UI]: Colour class map for booking status indicator dots in the calendar grid
 const STATUS_DOT = {
   PENDING: 'bg-amber-400',
   CONFIRMED: 'bg-blue-400',
@@ -22,10 +69,26 @@ const STATUS_DOT = {
   NO_SHOW: 'bg-slate-400',
 }
 
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    CalendarPage
+ * @purpose     Renders a navigable monthly calendar grid showing booking indicators per day, plus a selected-day booking list panel
+ * @returns {JSX.Element}
+ */
 export default function CalendarPage() {
+  // [STATE]: Currently displayed calendar month
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  // [STATE]: Currently selected day for the detail side panel
   const [selectedDay, setSelectedDay] = useState(new Date())
 
+  // [API CALL]: Fetch all bookings for the current month range from the calendar endpoint
   const { data, isLoading } = useQuery({
     queryKey: ['calendar', format(currentMonth, 'yyyy-MM')],
     queryFn: () => bookingsApi.calendar({
@@ -37,23 +100,25 @@ export default function CalendarPage() {
 
   const bookings = data || []
 
-  // Group bookings by date
+  // [DATA TRANSFORM]: Group bookings into a date-keyed map for O(1) day lookups
   const bookingsByDate = {}
   bookings.forEach(b => {
+    if (!b.scheduledAt) return
     const d = b.scheduledAt?.toDate ? b.scheduledAt.toDate() : new Date(b.scheduledAt)
+    if (isNaN(d.getTime())) return
     const key = format(d, 'yyyy-MM-dd')
     if (!bookingsByDate[key]) bookingsByDate[key] = []
     bookingsByDate[key].push(b)
   })
 
-  // Calendar grid
+  // [DATA TRANSFORM]: Build the full calendar grid including leading/trailing days from adjacent months
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
   const days = eachDayOfInterval({ start: calStart, end: calEnd })
 
-  // Selected day bookings
+  // [DATA TRANSFORM]: Retrieve bookings for the currently selected day
   const selectedKey = format(selectedDay, 'yyyy-MM-dd')
   const selectedBookings = bookingsByDate[selectedKey] || []
 
@@ -63,6 +128,7 @@ export default function CalendarPage() {
     <DashboardLayout title="Booking Calendar" subtitle="Month view">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
+          {/* [UI]: Previous month navigation */}
           <button onClick={() => setCurrentMonth(m => subMonths(m, 1))}
             className="p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-navy-600/50 transition-all">
             <ChevronLeft className="w-4 h-4" />
@@ -70,6 +136,7 @@ export default function CalendarPage() {
           <h2 className="font-display font-bold text-slate-100 text-lg w-40 text-center">
             {format(currentMonth, 'MMMM yyyy')}
           </h2>
+          {/* [UI]: Next month navigation */}
           <button onClick={() => setCurrentMonth(m => addMonths(m, 1))}
             className="p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-navy-600/50 transition-all">
             <ChevronRight className="w-4 h-4" />
@@ -116,6 +183,7 @@ export default function CalendarPage() {
                       isSelected
                         ? 'border-brand-blue bg-brand-blue/10'
                         : 'border-transparent hover:border-navy-400/40 hover:bg-navy-600/30',
+                      // [UI]: Dim days outside current month for visual clarity
                       !isCurrentMonth && 'opacity-30'
                     )}
                   >
@@ -126,6 +194,7 @@ export default function CalendarPage() {
                       {format(day, 'd')}
                     </span>
 
+                    {/* [UI]: Show up to 3 booking indicators; overflow count shown as "+N more" */}
                     {dayBookings.length > 0 && (
                       <div className="mt-1 space-y-0.5">
                         {dayBookings.slice(0, 3).map((b, i) => (
@@ -174,10 +243,11 @@ export default function CalendarPage() {
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
                 {selectedBookings.length} booking{selectedBookings.length !== 1 ? 's' : ''}
               </p>
+              {/* [DATA TRANSFORM]: Sort selected day's bookings chronologically */}
               {selectedBookings
                 .sort((a, b) => {
-                  const aTime = a.scheduledAt?.toDate ? a.scheduledAt.toDate() : new Date(a.scheduledAt)
-                  const bTime = b.scheduledAt?.toDate ? b.scheduledAt.toDate() : new Date(b.scheduledAt)
+                  const aTime = a.scheduledAt ? (a.scheduledAt?.toDate ? a.scheduledAt.toDate() : new Date(a.scheduledAt)) : new Date(0)
+                  const bTime = b.scheduledAt ? (b.scheduledAt?.toDate ? b.scheduledAt.toDate() : new Date(b.scheduledAt)) : new Date(0)
                   return aTime - bTime
                 })
                 .map((b) => (

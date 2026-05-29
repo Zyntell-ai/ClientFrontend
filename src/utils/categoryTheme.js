@@ -1,6 +1,29 @@
-// src/utils/categoryTheme.js
-// Morning Paper theme — one unique color story per category
+/**
+ * @file        categoryTheme.js
+ * @module      Category Theme
+ * @project     ClientFrontend
+ * @layer       Utility
+ * @description Morning Paper theme system — defines one unique color story per business category and exposes helpers to resolve and apply CSS custom properties to the document root.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - None (pure JS utility)
+ *
+ * @sideEffects
+ *   - applyTheme() writes CSS custom properties to document.documentElement.style
+ */
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+/**
+ * @constant    CATEGORY_THEMES
+ * @purpose     Full color token map for every supported business category — sidebar, body, accent, pop, text, borders, and alpha variants
+ */
+// [UI]: One color story per business category — resolved by getTheme()
 export const CATEGORY_THEMES = {
   // 1. Clinic & Healthcare — Orchid Care
   healthcare: {
@@ -111,7 +134,7 @@ export const CATEGORY_THEMES = {
     activeNavBg: 'rgba(139,69,19,0.08)',
     accentAlpha: 'rgba(139,69,19,',
   },
-  law: { $ref: 'legal' },
+  law:       { $ref: 'legal' },
   insurance: { $ref: 'legal' },
 
   // 8. Travel & Tourism — Aurora
@@ -145,7 +168,7 @@ export const CATEGORY_THEMES = {
     accentAlpha: 'rgba(122,102,82,',
   },
   architecture: { $ref: 'construction' },
-  homeservice: { $ref: 'construction' },
+  homeservice:  { $ref: 'construction' },
 
   // 10. Finance & Accounting — Private Wealth
   finance: {
@@ -177,12 +200,24 @@ export const CATEGORY_THEMES = {
     activeNavBg: 'rgba(220,38,38,0.10)',
     accentAlpha: 'rgba(220,38,38,',
   },
-  auto: { $ref: 'automobile' },
+  auto:   { $ref: 'automobile' },
   garage: { $ref: 'automobile' },
 }
 
+// [DATA TRANSFORM]: Default fallback theme when category is unrecognized or absent
 const DEFAULT = CATEGORY_THEMES.healthcare
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    getTheme
+ * @purpose     Resolve and return the full theme token object for a given business category slug
+ * @param  {string} category - Business category slug (e.g. "salon", "healthcare")
+ * @returns {object} Resolved theme token object
+ */
+// [DATA TRANSFORM]: Resolve category slug to theme — follow $ref aliases, fall back to DEFAULT
 export function getTheme(category) {
   if (!category) return DEFAULT
   const key = category.toLowerCase()
@@ -192,6 +227,13 @@ export function getTheme(category) {
   return entry
 }
 
+/**
+ * @function    applyTheme
+ * @purpose     Apply a category's resolved theme tokens as CSS custom properties on the document root element
+ * @param  {string} category - Business category slug to resolve and apply
+ * @returns {object} The resolved theme token object that was applied
+ */
+// [UI]: Write resolved theme tokens as CSS variables to document root
 export function applyTheme(category) {
   const t = getTheme(category)
   const r = document.documentElement

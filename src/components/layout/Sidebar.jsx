@@ -1,4 +1,43 @@
-// src/components/layout/Sidebar.jsx
+/**
+ * @file        Sidebar.jsx
+ * @module      Sidebar Navigation
+ * @project     ClientFrontend
+ * @layer       Component
+ * @description Collapsible sidebar with section-grouped navigation, business info pill, bot score indicator, and logout action.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - react
+ *   - react-router-dom (NavLink, useNavigate)
+ *   - ../../store/authStore (useAuthStore)
+ *   - ../../utils/categoryTheme (getTheme)
+ *   - ../../utils/index (CATEGORY_ICONS, PLAN_CONFIG)
+ *   - date-fns (format)
+ *   - clsx
+ *   - lucide-react (various icons)
+ *
+ * @sideEffects
+ *   - Calls authStore.logout() and navigates to /login on logout button click
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
@@ -12,6 +51,14 @@ import {
   LogOut, Target, Bot, Zap
 } from 'lucide-react'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+/**
+ * @constant    NAV
+ * @purpose     Structured navigation definition — sections with route paths, icons, labels, and optional badges
+ */
 const NAV = [
   {
     section: 'OVERVIEW', items: [
@@ -47,15 +94,40 @@ const NAV = [
   },
 ]
 
+// ─────────────────────────────────────────
+// EXPORTS
+// ─────────────────────────────────────────
+
+/**
+ * @function    Sidebar
+ * @purpose     Renders the collapsible navigation sidebar with business branding, nav groups, and logout
+ * @param  {boolean}  props.collapsed - Whether the sidebar is in collapsed (icon-only) mode
+ * @param  {Function} props.onToggle  - Callback to toggle collapsed state
+ * @returns {JSX.Element} Sidebar navigation element
+ */
 export default function Sidebar({ collapsed, onToggle }) {
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
   const { business, logout, getPlan } = useAuthStore()
   const navigate = useNavigate()
+
+  // [DATA TRANSFORM]: Resolve plan config, category theme, and display values
   const plan = getPlan()
   const planCfg = PLAN_CONFIG[plan] || PLAN_CONFIG.trial
   const theme = getTheme(business?.category)
   const catIcon = CATEGORY_ICONS[business?.category] || '🏢'
   const today = format(new Date(), 'EEE dd MMM yyyy').toUpperCase()
 
+  // ─────────────────────────────────────────
+  // CORE LOGIC / HANDLER FUNCTIONS
+  // ─────────────────────────────────────────
+
+  /**
+   * @function    handleLogout
+   * @purpose     Clear auth state and redirect to login page
+   */
+  // [AUTH]: Clear session and redirect to login on user-initiated logout
   const handleLogout = () => { logout(); navigate('/login') }
 
   return (
@@ -120,7 +192,7 @@ export default function Sidebar({ collapsed, onToggle }) {
               </p>
             </div>
           </div>
-          {/* Bot score bar */}
+          {/* [UI]: Bot score bar */}
           {business.botTrainingScore !== undefined && (
             <div className="mt-2.5">
               <div className="flex justify-between mb-1">

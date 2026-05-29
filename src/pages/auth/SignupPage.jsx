@@ -1,3 +1,46 @@
+/**
+ * @file        SignupPage.jsx
+ * @module      Authentication
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Multi-step business registration wizard that fetches industry categories from the backend and dynamically adapts form fields per selected category.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState, useEffect
+ *   - react-router-dom (Link, useNavigate)
+ *   - authStore (Zustand)
+ *   - authApi, categoriesApi
+ *   - UI components: Button, Input, Alert, Spinner
+ *   - lucide-react icons
+ *   - react-hot-toast
+ *   - clsx
+ *
+ * @sideEffects
+ *   - GET /api/categories — fetches business categories on mount
+ *   - POST /api/auth/register — submits full registration payload on final step
+ *   - Writes token + business profile to Zustand authStore on success
+ *   - Navigates to /onboarding after successful registration
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/auth/SignupPage.jsx
 // Dynamic signup — fetches categories from backend, adapts form fields per category
 import React, { useState, useEffect } from 'react'
@@ -10,6 +53,11 @@ import { Zap, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [BUSINESS RULE]: Fallback categories match backend registerSchema enum; used when API is unavailable
 // Fallback categories (matches backend's registerSchema enum)
 const FALLBACK_CATEGORIES = [
   { id: 'healthcare', label: 'Healthcare', icon: '🏥', subCategories: [
@@ -47,6 +95,7 @@ const FALLBACK_CATEGORIES = [
   ]},
 ]
 
+// [UI]: Category-specific extra questions injected into Step 1 based on selected category
 // Category-specific extra questions for the form
 const CATEGORY_QUESTIONS = {
   healthcare: [
@@ -71,19 +120,36 @@ const CATEGORY_QUESTIONS = {
   ],
 }
 
+// [UI]: Step labels for the progress indicator
 const STEPS = ['Category', 'Business Details', 'Account']
 
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    SignupPage
+ * @purpose     Three-step signup wizard — category selection, business details, then account credentials; submits to registration API on final step
+ * @returns {JSX.Element} Full-screen signup layout
+ */
 export default function SignupPage() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
 
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
+
+  // [STATE]: Current wizard step index (0 = category, 1 = details, 2 = account)
   const [step, setStep] = useState(0) // 0: category, 1: business details, 2: account
+  // [STATE]: List of business categories (fetched or fallback)
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [loadingCats, setLoadingCats] = useState(true)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPw, setShowPw] = useState(false)
 
+  // [STATE]: Flat form object shared across all three steps
   // Form state
   const [form, setForm] = useState({
     category: '', subCategory: '',
@@ -91,6 +157,7 @@ export default function SignupPage() {
     email: '', password: '',
   })
 
+  // [API CALL]: Fetch categories from backend (GET /api/categories — public endpoint)
   // Fetch categories from backend (GET /api/categories — public endpoint)
   useEffect(() => {
     categoriesApi.list()
@@ -101,21 +168,40 @@ export default function SignupPage() {
       .finally(() => setLoadingCats(false))
   }, [])
 
+  // ─────────────────────────────────────────
+  // CORE LOGIC / HANDLER FUNCTIONS
+  // ─────────────────────────────────────────
+
+  /**
+   * @function    update
+   * @purpose     Immutably updates a single field in the shared form state
+   * @param  {string} key - Form field key
+   * @param  {*}     val - New value
+   */
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
+  // [DATA TRANSFORM]: Resolve selected category object and context-specific extra questions
   const selectedCategory = categories.find(c => c.id === form.category)
   const extraQuestions = CATEGORY_QUESTIONS[form.category] || CATEGORY_QUESTIONS.default
 
+  /**
+   * @function    validateStep
+   * @purpose     Validates required fields for the current step before allowing progression
+   * @returns {boolean} true if valid, false otherwise (also sets error state)
+   */
   const validateStep = () => {
     if (step === 0) {
+      // [VALIDATION]: Category and sub-category must both be selected before moving to step 1
       if (!form.category) { setError('Please select your business category'); return false }
       if (!form.subCategory) { setError('Please select a sub-category'); return false }
     }
     if (step === 1) {
+      // [VALIDATION]: Business name and city are required in step 1
       if (!form.name?.trim()) { setError('Business name is required'); return false }
       if (!form.city?.trim()) { setError('City is required'); return false }
     }
     if (step === 2) {
+      // [VALIDATION]: Email required and password minimum length enforced
       if (!form.email?.trim()) { setError('Email is required'); return false }
       if (!form.password || form.password.length < 8) { setError('Password must be at least 8 characters'); return false }
     }
@@ -123,18 +209,28 @@ export default function SignupPage() {
     return true
   }
 
+  /**
+   * @function    handleNext
+   * @purpose     Validates current step and advances the wizard to the next step
+   */
   const handleNext = () => {
     if (!validateStep()) return
     setStep(s => s + 1)
   }
 
+  /**
+   * @function    handleSubmit
+   * @purpose     Submits full registration form to the API and stores auth credentials on success
+   */
   const handleSubmit = async () => {
     if (!validateStep()) return
     setLoading(true)
     setError('')
     try {
+      // [API CALL]: POST /api/auth/register — creates new business account
       const res = await authApi.register(form)
       const { token, business } = res.data
+      // [STATE]: Store auth token and business profile in Zustand
       setAuth(token, business)
       toast.success('Account created! Let\'s set up your bot 🚀')
       navigate('/onboarding')
@@ -246,6 +342,7 @@ export default function SignupPage() {
               </p>
 
               <div className="space-y-4">
+                {/* [UI]: Business name placeholder is contextualised to the selected category */}
                 <Input
                   label={`${selectedCategory?.label || 'Business'} Name`}
                   placeholder={`e.g., ${
@@ -258,6 +355,7 @@ export default function SignupPage() {
                   value={form.name}
                   onChange={e => update('name', e.target.value)}
                 />
+                {/* [UI]: Extra fields rendered dynamically based on selected category */}
                 {extraQuestions.map((q) => (
                   <Input
                     key={q.id}
@@ -300,6 +398,7 @@ export default function SignupPage() {
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {/* [UI]: Visual password strength bar based on length */}
                   {form.password && (
                     <div className="flex gap-1 mt-1">
                       {[...Array(4)].map((_, i) => (

@@ -1,3 +1,41 @@
+/**
+ * @file        StaffPage.jsx
+ * @module      Staff
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Provides a CRUD interface for managing staff members, including their roles, contact details, and day-of-week availability for booking assignment.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React (useState)
+ *   - @tanstack/react-query (useQuery, useMutation, useQueryClient)
+ *   - ../../api/index (businessApi)
+ *   - ../../components/layout/DashboardLayout
+ *   - ../../components/ui/index (Button, Modal, Input, EmptyState, Spinner, Avatar)
+ *   - lucide-react (Plus, Trash2, Mail, Phone)
+ *   - ../../utils/index (DAY_LABELS)
+ *   - react-hot-toast
+ *   - clsx
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/staff/StaffPage.jsx
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -9,9 +47,28 @@ import { DAY_LABELS } from '../../utils/index'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    StaffForm
+ * @purpose     Controlled form for adding a new staff member with day-of-week availability chips.
+ * @param  {Function} props.onSubmit - Callback receiving the form payload object
+ * @param  {boolean}  props.loading  - Whether the create mutation is in-flight
+ * @returns {JSX.Element}
+ */
 function StaffForm({ onSubmit, loading }) {
+  // [STATE]: New staff form initialised with weekday defaults
   const [form, setForm] = useState({ name: '', role: '', specialization: '', email: '', phone: '', availableDays: [1, 2, 3, 4, 5] })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  /**
+   * @function    toggleDay
+   * @purpose     Toggles a day index in the availableDays array.
+   * @param  {number} d - Day index to toggle (0 = Sunday … 6 = Saturday)
+   * @returns {void}
+   */
   const toggleDay = (d) => set('availableDays', form.availableDays.includes(d) ? form.availableDays.filter(x => x !== d) : [...form.availableDays, d])
 
   return (
@@ -41,17 +98,32 @@ function StaffForm({ onSubmit, loading }) {
   )
 }
 
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    StaffPage
+ * @purpose     Page-level component that lists staff members and orchestrates create and delete mutations via an add-staff modal.
+ * @returns {JSX.Element}
+ */
 export default function StaffPage() {
   const qc = useQueryClient()
+
+  // [STATE]: Add-staff modal visibility
   const [showAdd, setShowAdd] = useState(false)
 
+  // [API CALL]: Fetch the list of staff for the current business
   const { data, isLoading } = useQuery({ queryKey: ['staff'], queryFn: () => businessApi.getStaff(), select: r => r.data.staff })
 
+  // [API CALL]: Create a new staff member
   const createMutation = useMutation({
     mutationFn: businessApi.createStaff,
     onSuccess: () => { toast.success('Staff member added!'); qc.invalidateQueries(['staff']); setShowAdd(false) },
     onError: e => toast.error(e.response?.data?.error || 'Failed'),
   })
+
+  // [API CALL]: Delete a staff member by id
   const deleteMutation = useMutation({
     mutationFn: businessApi.deleteStaff,
     onSuccess: () => { toast.success('Staff removed'); qc.invalidateQueries(['staff']) },
@@ -80,12 +152,14 @@ export default function StaffPage() {
                   <p className="text-xs text-violet-600 mt-0.5">{m.role}</p>
                   {m.specialization && <p className="text-xs text-slate-500 mt-0.5">{m.specialization}</p>}
                 </div>
+                {/* [UI]: Delete action revealed on card hover */}
                 <button onClick={() => deleteMutation.mutate(m.id)} className="p-1.5 text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
               {m.phone && <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-1"><Phone className="w-3 h-3" />{m.phone}</p>}
               {m.email && <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-3"><Mail className="w-3 h-3" />{m.email}</p>}
+              {/* [UI]: Day availability chips */}
               <div className="flex gap-1">
                 {DAY_LABELS.map((day, idx) => (
                   <div key={day} className={clsx('w-7 h-7 rounded text-[10px] font-semibold flex items-center justify-center',

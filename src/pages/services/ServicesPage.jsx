@@ -1,3 +1,40 @@
+/**
+ * @file        ServicesPage.jsx
+ * @module      Services
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Provides a CRUD interface for managing the business services that the AI bot uses when handling bookings.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React (useState)
+ *   - @tanstack/react-query (useQuery, useMutation, useQueryClient)
+ *   - ../../api/index (businessApi)
+ *   - ../../components/layout/DashboardLayout
+ *   - ../../components/ui/index (Button, Modal, Input, Card, EmptyState, Spinner, Badge)
+ *   - lucide-react (Plus, Trash2, Pencil, Clock, DollarSign)
+ *   - ../../utils/index (fmt)
+ *   - react-hot-toast
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/services/ServicesPage.jsx
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -8,7 +45,20 @@ import { Plus, Trash2, Pencil, Clock, DollarSign } from 'lucide-react'
 import { fmt } from '../../utils/index'
 import toast from 'react-hot-toast'
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    ServiceForm
+ * @purpose     Controlled form for creating or editing a service; coerces numeric fields before calling onSubmit.
+ * @param  {Object}   props.initial  - Existing service values used to pre-populate the form (edit mode)
+ * @param  {Function} props.onSubmit - Callback receiving the sanitised form payload
+ * @param  {boolean}  props.loading  - Whether the parent mutation is in-flight
+ * @returns {JSX.Element}
+ */
 function ServiceForm({ initial = {}, onSubmit, loading }) {
+  // [STATE]: Merge initial values with defaults
   const [form, setForm] = useState({ name: '', nameRegional: '', description: '', duration: 30, price: '', priceMin: '', priceMax: '', ...initial })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   return (
@@ -23,6 +73,7 @@ function ServiceForm({ initial = {}, onSubmit, loading }) {
         <Input label="Fixed Price (₹)" type="number" value={form.price || ''} onChange={e => set('price', e.target.value)} />
         <Input label="Min Price (₹)" type="number" value={form.priceMin || ''} onChange={e => set('priceMin', e.target.value)} />
       </div>
+      {/* [DATA TRANSFORM]: Coerce string inputs to numbers; omit undefined optional fields */}
       <Button className="w-full" loading={loading} onClick={() => onSubmit({
         ...form, duration: Number(form.duration),
         price: form.price ? Number(form.price) : undefined,
@@ -35,23 +86,40 @@ function ServiceForm({ initial = {}, onSubmit, loading }) {
   )
 }
 
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    ServicesPage
+ * @purpose     Page-level component that lists services and orchestrates create, update, and delete mutations via modals.
+ * @returns {JSX.Element}
+ */
 export default function ServicesPage() {
   const qc = useQueryClient()
+
+  // [STATE]: Modal visibility and service selected for editing
   const [showAdd, setShowAdd] = useState(false)
   const [editSvc, setEditSvc] = useState(null)
 
+  // [API CALL]: Fetch the list of services for the current business
   const { data, isLoading } = useQuery({ queryKey: ['services'], queryFn: () => businessApi.getServices(), select: r => r.data.services })
 
+  // [API CALL]: Create a new service
   const createMutation = useMutation({
     mutationFn: (d) => businessApi.createService(d),
     onSuccess: () => { toast.success('Service added!'); qc.invalidateQueries(['services']); setShowAdd(false) },
     onError: e => toast.error(e.response?.data?.error || 'Failed'),
   })
+
+  // [API CALL]: Update an existing service by id
   const updateMutation = useMutation({
     mutationFn: ({ id, ...d }) => businessApi.updateService(id, d),
     onSuccess: () => { toast.success('Service updated!'); qc.invalidateQueries(['services']); setEditSvc(null) },
     onError: e => toast.error(e.response?.data?.error || 'Failed'),
   })
+
+  // [API CALL]: Delete a service by id
   const deleteMutation = useMutation({
     mutationFn: (id) => businessApi.deleteService(id),
     onSuccess: () => { toast.success('Service removed'); qc.invalidateQueries(['services']) },
@@ -79,6 +147,7 @@ export default function ServicesPage() {
                   <p className="font-display font-semibold text-[#1E1B4B] text-sm">{svc.name}</p>
                   {svc.nameRegional && <p className="text-xs hover:text-violet-600 mt-0.5">{svc.nameRegional}</p>}
                 </div>
+                {/* [UI]: Edit and delete actions revealed on hover */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => setEditSvc(svc)} className="p-1.5 hover:text-violet-600 hover:text-violet-600 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                   <button onClick={() => deleteMutation.mutate(svc.id)} className="p-1.5 hover:text-violet-600 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>

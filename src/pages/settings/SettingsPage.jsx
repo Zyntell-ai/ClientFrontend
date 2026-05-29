@@ -1,3 +1,42 @@
+/**
+ * @file        SettingsPage.jsx
+ * @module      Settings
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Multi-tab settings page for configuring bot personality, working hours, FAQ training data, and notification preferences.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React (useState, useEffect)
+ *   - @tanstack/react-query (useQuery, useMutation, useQueryClient)
+ *   - ../../api/index (businessApi)
+ *   - ../../store/authStore (useAuthStore)
+ *   - ../../components/layout/DashboardLayout
+ *   - ../../components/ui/index (Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner)
+ *   - ../../utils/index (BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS)
+ *   - lucide-react (Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin)
+ *   - react-hot-toast
+ *   - clsx
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/settings/SettingsPage.jsx
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -10,6 +49,9 @@ import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin } from 'luc
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
 const TABS = [
   { id: 'bot',           label: 'Bot Config',      icon: Bot           },
   { id: 'hours',         label: 'Working Hours',   icon: Clock         },
@@ -17,14 +59,29 @@ const TABS = [
   { id: 'notifications', label: 'Notifications',   icon: Bell          },
 ]
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
 // ─── Bot Config Tab ───────────────────────────────────────────
+
+/**
+ * @function    BotConfigTab
+ * @purpose     Renders the bot personality, booking rules, and location settings form; syncs from remote settings on mount.
+ * @param  {Object}   props.settings - Remote settings object to initialise the form
+ * @param  {Function} props.onSave   - Callback receiving the complete form payload
+ * @param  {boolean}  props.saving   - Whether the save mutation is in-flight
+ * @returns {JSX.Element}
+ */
 function BotConfigTab({ settings, onSave, saving }) {
+  // [STATE]: Controlled form initialised from remote settings with safe defaults
   const [form, setForm] = useState({
     welcomeMessage: '', botPersona: 'Priya', botTone: 'friendly', language: 'te',
     allowCancellation: true, cancellationHoursLimit: 2, bookingBufferMinutes: 0,
     maxBookingsPerSlot: 1, autoConfirmBookings: false, conversationCap: 50,
     address: '', leadExclusiveWindowHours: 2, ...settings,
   })
+  // [STATE]: Re-sync form when remote settings load or change
   useEffect(() => { if (settings) setForm(f => ({ ...f, ...settings })) }, [settings])
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -123,10 +180,18 @@ function BotConfigTab({ settings, onSave, saving }) {
 }
 
 // ─── Working Hours Tab ────────────────────────────────────────
+
+/**
+ * @function    WorkingHoursTab
+ * @purpose     Fetches and edits per-day working hours with open/close toggles and optional break windows.
+ * @returns {JSX.Element}
+ */
 function WorkingHoursTab() {
   const qc = useQueryClient()
+  // [STATE]: Local copy of hours array; sorted by dayOfWeek after fetch
   const [hours, setHours] = useState([])
 
+  // [API CALL]: Fetch current working hours
   const { data, isLoading } = useQuery({
     queryKey: ['hours'],
     queryFn: businessApi.getHours,
@@ -137,14 +202,24 @@ function WorkingHoursTab() {
     if (data?.length) setHours([...data].sort((a, b) => a.dayOfWeek - b.dayOfWeek))
   }, [data])
 
+  // [API CALL]: Persist updated working hours array
   const updateMutation = useMutation({
     mutationFn: (h) => businessApi.updateHours({ hours: h }),
     onSuccess: () => { toast.success('Working hours saved!'); qc.invalidateQueries(['hours']) },
     onError: e => toast.error(e.response?.data?.error || 'Failed to save'),
   })
 
+  /**
+   * @function    updateHour
+   * @purpose     Updates a single field on the hours entry at the given index.
+   * @param  {number} i   - Index in the hours array
+   * @param  {string} key - Field to update
+   * @param  {*}      val - New value
+   * @returns {void}
+   */
   const updateHour = (i, key, val) => setHours(h => h.map((d, idx) => idx === i ? { ...d, [key]: val } : d))
 
+  // [GUARD]: Show spinner while hours are loading
   if (isLoading) return <div className="flex justify-center py-12"><Spinner /></div>
 
   return (
@@ -194,17 +269,26 @@ function WorkingHoursTab() {
 }
 
 // ─── FAQs Tab ─────────────────────────────────────────────────
+
+/**
+ * @function    FaqsTab
+ * @purpose     Lists FAQ training entries and allows creating and deleting them to improve bot response quality.
+ * @returns {JSX.Element}
+ */
 function FaqsTab() {
   const qc = useQueryClient()
+  // [STATE]: Add-FAQ modal visibility and new FAQ form fields
   const [showAdd, setShowAdd] = useState(false)
   const [newFaq, setNewFaq]   = useState({ question: '', answer: '', category: '' })
 
+  // [API CALL]: Fetch FAQ list
   const { data, isLoading } = useQuery({
     queryKey: ['faqs'],
     queryFn: businessApi.getFaqs,
     select: r => r.data.faqs,
   })
 
+  // [API CALL]: Create a new FAQ entry
   const createMutation = useMutation({
     mutationFn: businessApi.createFaq,
     onSuccess: () => {
@@ -216,6 +300,7 @@ function FaqsTab() {
     onError: e => toast.error(e.response?.data?.error || 'Failed'),
   })
 
+  // [API CALL]: Delete a FAQ entry by id
   const deleteMutation = useMutation({
     mutationFn: businessApi.deleteFaq,
     onSuccess: () => { toast.success('FAQ removed'); qc.invalidateQueries(['faqs']) },
@@ -284,12 +369,23 @@ function FaqsTab() {
 }
 
 // ─── Notifications Tab ────────────────────────────────────────
+
+/**
+ * @function    NotificationsTab
+ * @purpose     Renders notification preference toggles and reminder-interval chip selectors, syncing from remote settings on mount.
+ * @param  {Object}   props.settings - Remote settings object to initialise the form
+ * @param  {Function} props.onSave   - Callback receiving the complete notification form payload
+ * @param  {boolean}  props.saving   - Whether the save mutation is in-flight
+ * @returns {JSX.Element}
+ */
 function NotificationsTab({ settings, onSave, saving }) {
+  // [STATE]: Notification preferences with safe defaults
   const [form, setForm] = useState({
     notifyOwnerOnBooking: true, notifyOwnerOnLead: true,
     notifyOwnerOnMissedCall: true, dailySummaryAt9AM: true,
     reminderHours: [24, 1], ...settings,
   })
+  // [STATE]: Re-sync when remote settings load
   useEffect(() => { if (settings) setForm(f => ({ ...f, ...settings })) }, [settings])
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -314,6 +410,7 @@ function NotificationsTab({ settings, onSave, saving }) {
         <p className="text-xs text-slate-500 mb-3">Send booking reminders to customers at these intervals (hours before appointment):</p>
         <div className="flex gap-2 flex-wrap">
           {[1, 2, 6, 12, 24, 48].map(h => (
+            // [BUSINESS RULE]: Toggle reminder interval on/off; supports multiple simultaneous intervals
             <button key={h} onClick={() => {
               const cur = form.reminderHours || []
               set('reminderHours', cur.includes(h) ? cur.filter(x => x !== h) : [...cur, h])
@@ -335,17 +432,35 @@ function NotificationsTab({ settings, onSave, saving }) {
 }
 
 // ─── Main Settings Page ───────────────────────────────────────
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    SettingsPage
+ * @purpose     Page-level component that loads business settings and renders the tabbed settings interface with a sticky sidebar nav.
+ * @returns {JSX.Element}
+ */
 export default function SettingsPage() {
   const { business }  = useAuthStore()
   const qc            = useQueryClient()
+
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
+
+  // [STATE]: Active settings tab
   const [activeTab, setActiveTab] = useState('bot')
 
+  // [API CALL]: Fetch the consolidated business settings object
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: businessApi.getSettings,
     select: r => r.data.settings,
   })
 
+  // [API CALL]: Persist updated settings
   const updateMutation = useMutation({
     mutationFn: businessApi.updateSettings,
     onSuccess: () => { toast.success('Settings saved!'); qc.invalidateQueries(['settings']) },

@@ -1,4 +1,41 @@
-// src/components/layout/Topbar.jsx
+/**
+ * @file        Topbar.jsx
+ * @module      Topbar
+ * @project     ClientFrontend
+ * @layer       Component
+ * @description Fixed top navigation bar displaying page title, sidebar toggle, current date, plan badge, and business avatar.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - react
+ *   - ../../store/authStore (useAuthStore)
+ *   - ../../utils/categoryTheme (getTheme)
+ *   - ../../utils/index (PLAN_CONFIG)
+ *   - lucide-react (ChevronLeft, ChevronRight)
+ *   - date-fns (format)
+ *
+ * @sideEffects
+ *   - None
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { getTheme } from '../../utils/categoryTheme'
@@ -6,10 +43,28 @@ import { PLAN_CONFIG } from '../../utils/index'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 
+// ─────────────────────────────────────────
+// EXPORTS
+// ─────────────────────────────────────────
+
+/**
+ * @function    Topbar
+ * @purpose     Renders the top header bar with sidebar toggle, page title/subtitle, date, plan badge, and initials avatar
+ * @param  {boolean}  props.collapsed - Current sidebar collapse state (determines toggle icon direction)
+ * @param  {Function} props.onToggle  - Callback to toggle sidebar collapsed state
+ * @param  {string}   props.title     - Page title to display in serif typeface
+ * @param  {string}   props.subtitle  - Optional page subtitle
+ * @returns {JSX.Element} Top navigation bar element
+ */
 export function Topbar({ collapsed, onToggle, title, subtitle }) {
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
   const { business, getPlan } = useAuthStore()
   const plan    = getPlan()
   const planCfg = PLAN_CONFIG[plan] || PLAN_CONFIG.trial
+
+  // [DATA TRANSFORM]: Derive initials from business name for avatar display
   const initials = (business?.name || 'Z').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
   return (
@@ -36,7 +91,7 @@ export function Topbar({ collapsed, onToggle, title, subtitle }) {
           }
         </button>
 
-        {/* Newspaper-style title with ruled line */}
+        {/* [UI]: Newspaper-style title with ruled line */}
         {title && (
           <div className="flex items-baseline gap-3">
             <h1
@@ -56,7 +111,7 @@ export function Topbar({ collapsed, onToggle, title, subtitle }) {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        {/* Date — newspaper style */}
+        {/* [UI]: Date — newspaper style */}
         <span
           className="text-[10px] tracking-widest hidden md:block"
           style={{ color: 'var(--mp-text)', opacity: 0.35, fontFamily: 'DM Sans, sans-serif', textTransform: 'uppercase', letterSpacing: '0.1em' }}
@@ -64,7 +119,7 @@ export function Topbar({ collapsed, onToggle, title, subtitle }) {
           {format(new Date(), 'EEE dd MMM')}
         </span>
 
-        {/* Plan badge */}
+        {/* [UI]: Plan badge */}
         <span
           className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
           style={{
@@ -76,7 +131,7 @@ export function Topbar({ collapsed, onToggle, title, subtitle }) {
           {planCfg.label}
         </span>
 
-        {/* Avatar */}
+        {/* [UI]: Avatar */}
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
           style={{ background: 'var(--mp-accent)', color: '#fff', fontSize: '11px' }}

@@ -1,3 +1,47 @@
+/**
+ * @file        BookingsPage.jsx
+ * @module      Bookings
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Lists all business bookings with a dual-view (Time River / List), status filters, and a detail modal supporting OTP contact unlock and status transitions.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState
+ *   - @tanstack/react-query (useQuery, useMutation, useQueryClient)
+ *   - bookingsApi
+ *   - DashboardLayout
+ *   - UI components: Button, Badge, Modal, Input, Select, Tabs, EmptyState, Spinner, Avatar, Alert
+ *   - TimeRiver component
+ *   - utils: fmt, BOOKING_STATUS_COLORS, toDate
+ *   - lucide-react icons
+ *   - react-hot-toast
+ *   - clsx
+ *
+ * @sideEffects
+ *   - GET /api/bookings — fetches bookings list (polled every 30 s)
+ *   - PATCH /api/bookings/:id/status — updates booking status
+ *   - POST /api/bookings/:id/verify-otp — verifies OTP to unlock customer contact
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/bookings/BookingsPage.jsx
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -10,6 +54,11 @@ import { Calendar, CheckCircle2, XCircle, KeyRound, List, Waves } from 'lucide-r
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [UI]: Tab definitions for filtering bookings by status
 const STATUS_TABS = [
   { value: 'all',       label: 'All'       },
   { value: 'PENDING',   label: 'Pending'   },
@@ -19,11 +68,22 @@ const STATUS_TABS = [
   { value: 'NO_SHOW',   label: 'No Show'   },
 ]
 
+// [UI]: Tab definitions for switching between Time River and List views
 const VIEW_TABS = [
   { value: 'river', label: '〜 Time River' },
   { value: 'list',  label: '≡ List'        },
 ]
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    statusStyle
+ * @purpose     Returns inline background, text, and border colour tokens for a given booking status
+ * @param  {string} status - Booking status string (CONFIRMED, PENDING, COMPLETED, CANCELLED, NO_SHOW)
+ * @returns {{ bg: string, text: string, border: string }}
+ */
 function statusStyle(status) {
   return {
     CONFIRMED: { bg: 'rgba(5,150,105,0.08)',   text: '#059669', border: 'rgba(5,150,105,0.20)'   },
@@ -34,22 +94,33 @@ function statusStyle(status) {
   }[status] || { bg: 'var(--mp-a05)', text: 'var(--mp-text)', border: 'var(--mp-card-border)' }
 }
 
+/**
+ * @function    BookingDetailModal
+ * @purpose     Modal that displays full booking details, allows OTP-based contact unlock, and exposes status-change actions (confirm, complete, cancel)
+ * @param  {{ booking: object, open: boolean, onClose: Function }} props
+ * @returns {JSX.Element|null}
+ */
 function BookingDetailModal({ booking, open, onClose }) {
   const qc = useQueryClient()
+  // [STATE]: OTP input value for contact unlock
   const [otp, setOtp]           = useState('')
+  // [STATE]: Optional cancellation reason captured via browser prompt
   const [cancelReason, setReason] = useState('')
 
+  // [API CALL]: PATCH booking status (confirm / complete / cancel)
   const statusMutation = useMutation({
     mutationFn: ({ id, status, cancelReason }) => bookingsApi.updateStatus(id, { status, cancelReason }),
     onSuccess: () => { toast.success('Booking updated'); qc.invalidateQueries(['bookings']); onClose() },
     onError:   e => toast.error(e.response?.data?.error || 'Update failed'),
   })
+  // [API CALL]: POST OTP to unlock customer contact details
   const otpMutation = useMutation({
     mutationFn: ({ id, otp }) => bookingsApi.verifyOtp(id, { otp }),
     onSuccess: () => { toast.success('Contact unlocked!'); qc.invalidateQueries(['bookings']); onClose() },
     onError:   () => toast.error('Invalid OTP'),
   })
 
+  // [GUARD]: Render nothing if no booking is selected
   if (!booking) return null
   const ss = statusStyle(booking.status)
 
@@ -87,6 +158,7 @@ function BookingDetailModal({ booking, open, onClose }) {
         </div>
 
         {/* OTP unlock */}
+        {/* [BUSINESS RULE]: Contact details are masked until the OTP is verified */}
         {!booking.contactUnlocked && (
           <Alert type="info">Enter the 4-digit OTP to unlock this customer's contact details</Alert>
         )}
@@ -101,6 +173,7 @@ function BookingDetailModal({ booking, open, onClose }) {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 pt-2" style={{ borderTop: '0.5px solid var(--mp-card-border)' }}>
+          {/* [BUSINESS RULE]: Confirm action only available for PENDING bookings */}
           {booking.status === 'PENDING' && (
             <Button
               onClick={() => statusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
@@ -109,6 +182,7 @@ function BookingDetailModal({ booking, open, onClose }) {
               <CheckCircle2 className="w-4 h-4" /> Confirm
             </Button>
           )}
+          {/* [BUSINESS RULE]: Complete and Cancel actions only available for PENDING or CONFIRMED bookings */}
           {['PENDING', 'CONFIRMED'].includes(booking.status) && (
             <>
               <Button
@@ -136,11 +210,28 @@ function BookingDetailModal({ booking, open, onClose }) {
   )
 }
 
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    BookingsPage
+ * @purpose     Main bookings page — renders a status-filtered, dual-view (Time River / List) bookings interface with an inline detail modal
+ * @returns {JSX.Element}
+ */
 export default function BookingsPage() {
+  // [STATE]: Active status filter tab value
   const [statusTab, setStatusTab] = useState('all')
+  // [STATE]: Active view mode — "river" or "list"
   const [viewMode,  setViewMode]  = useState('river')
+  // [STATE]: Currently selected booking for detail modal
   const [selected,  setSelected]  = useState(null)
 
+  // [API CALL]: Fetches bookings filtered by status; auto-refreshes every 30 seconds
   const { data, isLoading } = useQuery({
     queryKey: ['bookings', statusTab],
     queryFn:  () => bookingsApi.list({ status: statusTab === 'all' ? undefined : statusTab }),
@@ -150,12 +241,13 @@ export default function BookingsPage() {
 
   const bookings = data || []
 
-  // Convert bookings to TimeRiver items (today's bookings — all statuses including COMPLETED)
+  // [DATA TRANSFORM]: Convert bookings to TimeRiver items (today's bookings — all statuses including COMPLETED)
   const today = new Date()
   const todayY = today.getFullYear()
   const todayM = today.getMonth()
   const todayD = today.getDate()
 
+  // [DATA TRANSFORM]: Filter to today's bookings and map to TimeRiver item shape
   const todayBookings = bookings
     .filter(b => {
       const d = toDate(b.scheduledAt)

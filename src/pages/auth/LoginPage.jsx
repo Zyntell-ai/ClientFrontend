@@ -1,3 +1,46 @@
+/**
+ * @file        LoginPage.jsx
+ * @module      Authentication
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Renders the business login form with animated particle-constellation panels, 3-D tilt effect, and credential submission.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState, useEffect, useRef, useCallback
+ *   - react-router-dom (Link, useNavigate)
+ *   - react-hook-form, @hookform/resolvers/zod, zod
+ *   - react-hot-toast
+ *   - framer-motion (motion, AnimatePresence, useMotionValue, useSpring)
+ *   - authStore (Zustand)
+ *   - authApi (auth.api)
+ *   - UI components: Button, Input, Alert
+ *   - lucide-react icons
+ *
+ * @sideEffects
+ *   - POST /api/auth/login — authenticates business credentials
+ *   - Writes token + business profile to Zustand authStore on success
+ *   - Navigates to /dashboard or /onboarding based on setupCompleted flag
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/auth/LoginPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -11,11 +54,17 @@ import { authApi } from '../../api/auth.api'
 import { Button, Input, Alert } from '../../components/ui/index'
 import { Zap, ArrowRight, Eye, EyeOff, BarChart2, Target, Bot } from 'lucide-react'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [VALIDATION]: Zod schema enforcing email format and non-empty password
 const schema = z.object({
   email:    z.string().email('Invalid email'),
   password: z.string().min(1, 'Password required'),
 })
 
+// [UI]: Framer-motion variant — slides element up from y=24 with stagger delay
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   show: (i = 0) => ({
@@ -24,6 +73,7 @@ const fadeUp = {
   }),
 }
 
+// [UI]: Framer-motion variant — pure opacity fade with stagger delay
 const fadeIn = {
   hidden: { opacity: 0 },
   show: (i = 0) => ({
@@ -32,6 +82,7 @@ const fadeIn = {
   }),
 }
 
+// [UI]: Feature bullets displayed on the left marketing panel
 const features = [
   { icon: Bot,       title: 'AI-Powered WhatsApp Bot',  desc: 'Handles bookings, queries & lead capture 24/7'     },
   { icon: BarChart2, title: 'Real-time Analytics',      desc: 'Booking rates, customer insights, revenue tracking' },
@@ -47,6 +98,21 @@ const features = [
    • Radial glow aura follows cursor
    Uses refs for mouse — zero re-renders on mousemove
 ════════════════════════════════════════════════ */
+
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    ParticleCanvas
+ * @purpose     Renders an animated WebGL-less canvas with drifting particles, constellation lines, cursor attraction, and a radial glow aura
+ * @param  {number} count     - Number of particles to spawn
+ * @param  {string} pColor    - CSS color string for particle dots
+ * @param  {string} lColor    - CSS color string for connection lines
+ * @param  {string} glowRgb   - RGB triplet string for cursor glow (e.g. "255,255,255")
+ * @param  {object} mouseRef  - Ref holding { x, y } of current mouse position relative to panel
+ * @returns {JSX.Element} An absolutely-positioned canvas element
+ */
 function ParticleCanvas({ count = 52, pColor, lColor, glowRgb, mouseRef }) {
   const canvasRef    = useRef(null)
   const particlesRef = useRef([])
@@ -57,6 +123,7 @@ function ParticleCanvas({ count = 52, pColor, lColor, glowRgb, mouseRef }) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
 
+    // [STATE]: Initialise canvas dimensions and particle positions
     const init = () => {
       canvas.width  = canvas.offsetWidth
       canvas.height = canvas.offsetHeight
@@ -216,31 +283,68 @@ function ParticleCanvas({ count = 52, pColor, lColor, glowRgb, mouseRef }) {
 /* ════════════════════════════════════════════════
    LOGIN PAGE
 ════════════════════════════════════════════════ */
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    LoginPage
+ * @purpose     Main login page component — splits into a branded left panel and a form right panel with particle canvases on both sides
+ * @returns {JSX.Element} Full-screen login layout
+ */
 export default function LoginPage() {
   const navigate    = useNavigate()
   const { setAuth } = useAuthStore()
+
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
+
+  // [STATE]: Controls password visibility toggle
   const [showPw, setShowPw] = useState(false)
+  // [STATE]: Stores server-side login error message
   const [error,  setError]  = useState('')
 
   /* ── Mouse refs (no re-render on move) ── */
+  // [STATE]: Tracks mouse position over left and right panels via refs to avoid re-renders
   const leftMouseRef  = useRef({ x: -999, y: -999 })
   const rightMouseRef = useRef({ x: -999, y: -999 })
   const leftPanelRef  = useRef(null)
   const rightPanelRef = useRef(null)
 
   /* ── Form card 3-D tilt ── */
+  // [STATE]: Spring-animated tilt values for the form card's perspective transform
   const tiltX = useSpring(useMotionValue(0), { stiffness: 75, damping: 16 })
   const tiltY = useSpring(useMotionValue(0), { stiffness: 75, damping: 16 })
 
+  // ─────────────────────────────────────────
+  // CORE LOGIC / HANDLER FUNCTIONS
+  // ─────────────────────────────────────────
+
+  /**
+   * @function    handleLeftMove
+   * @purpose     Updates leftMouseRef with cursor coordinates relative to left panel
+   * @param  {MouseEvent} e - mousemove event
+   */
   const handleLeftMove = useCallback((e) => {
     const r = e.currentTarget.getBoundingClientRect()
     leftMouseRef.current = { x: e.clientX - r.left, y: e.clientY - r.top }
   }, [])
 
+  /**
+   * @function    handleLeftLeave
+   * @purpose     Resets leftMouseRef when cursor leaves the left panel
+   */
   const handleLeftLeave = useCallback(() => {
     leftMouseRef.current = { x: -999, y: -999 }
   }, [])
 
+  /**
+   * @function    handleRightMove
+   * @purpose     Updates rightMouseRef and computes 3-D tilt values based on cursor position over the form card
+   * @param  {MouseEvent} e - mousemove event
+   */
   const handleRightMove = useCallback((e) => {
     if (!rightPanelRef.current) return
     const r = rightPanelRef.current.getBoundingClientRect()
@@ -251,6 +355,10 @@ export default function LoginPage() {
     tiltX.set((-(y - r.height / 2) / (r.height / 2)) * 3.5)
   }, [tiltX, tiltY])
 
+  /**
+   * @function    handleRightLeave
+   * @purpose     Resets rightMouseRef and returns tilt to neutral when cursor leaves the right panel
+   */
   const handleRightLeave = useCallback(() => {
     rightMouseRef.current = { x: -999, y: -999 }
     tiltX.set(0)
@@ -261,19 +369,31 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
   })
 
+  /**
+   * @function    onSubmit
+   * @purpose     Submits login credentials to the API, stores auth token, and redirects based on setup status
+   * @param  {{ email: string, password: string }} data - validated form values
+   */
   const onSubmit = async (data) => {
     setError('')
     try {
+      // [API CALL]: POST /api/auth/login — authenticates business credentials
       const res = await authApi.login(data)
       const { token, business } = res.data
+      // [STATE]: Persist token and business profile to Zustand auth store
       setAuth(token, business)
       toast.success(`Welcome back, ${business.name}!`)
+      // [BUSINESS RULE]: Redirect to onboarding if setup is not yet completed
       if (!business.setupCompleted) navigate('/onboarding')
       else navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.')
     }
   }
+
+  // ─────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────
 
   return (
     <div
@@ -498,6 +618,7 @@ export default function LoginPage() {
                   className="input-field pr-10"
                   {...register('password')}
                 />
+                {/* [UI]: Toggle button reveals/hides password with animated icon swap */}
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.82 }}

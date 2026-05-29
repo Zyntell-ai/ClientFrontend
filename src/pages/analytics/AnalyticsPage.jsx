@@ -1,3 +1,45 @@
+/**
+ * @file        AnalyticsPage.jsx
+ * @module      Analytics
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Displays business analytics including booking trends, customer retention, revenue, and ROI charts sourced from the analytics API.
+ *
+ * @updated     2026-05-28
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState
+ *   - @tanstack/react-query (useQuery)
+ *   - analyticsApi
+ *   - DashboardLayout
+ *   - UI components: Card, StatCard, Spinner
+ *   - utils: fmt, RANGE_OPTIONS
+ *   - recharts: BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend
+ *   - lucide-react icons
+ *
+ * @sideEffects
+ *   - GET /api/analytics/bookings — fetches booking stats for selected range
+ *   - GET /api/analytics/customers — fetches customer retention stats for selected range
+ *   - GET /api/analytics/revenue — fetches revenue and ROI data
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/analytics/AnalyticsPage.jsx
 // Maps to GET /api/analytics/bookings, /customers, /revenue
 import React, { useState } from 'react'
@@ -12,8 +54,22 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend
 } from 'recharts'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [UI]: Colour palette shared across all chart series
 const CHART_COLORS = { blue: '#3b82f6', green: '#10b981', amber: '#f59e0b', purple: '#8b5cf6', red: '#ef4444' }
 
+/**
+ * @function    CustomTooltip
+ * @purpose     Renders a dark-themed custom tooltip for all Recharts charts
+ * @param  {boolean} active   - Whether the tooltip is visible
+ * @param  {Array}   payload  - Array of data series entries for the hovered point
+ * @param  {string}  label    - X-axis label for the hovered point
+ * @param  {string}  prefix   - Optional prefix string (e.g. "₹") prepended to values
+ * @returns {JSX.Element|null}
+ */
 function CustomTooltip({ active, payload, label, prefix = '' }) {
   if (!active || !payload?.length) return null
   return (
@@ -26,33 +82,54 @@ function CustomTooltip({ active, payload, label, prefix = '' }) {
   )
 }
 
+// [UI]: Colour map for booking status segments in the pie chart
 const STATUS_COLORS = { PENDING: '#f59e0b', CONFIRMED: '#3b82f6', COMPLETED: '#10b981', CANCELLED: '#ef4444', NO_SHOW: '#64748b' }
 
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    AnalyticsPage
+ * @purpose     Fetches and renders all business analytics — bookings, customers, revenue — with a range picker and multiple Recharts visualisations
+ * @returns {JSX.Element}
+ */
 export default function AnalyticsPage() {
+  // [STATE]: Selected date range for analytics queries (e.g. "30d", "7d")
   const [range, setRange] = useState('30d')
 
+  // [API CALL]: Fetches booking analytics for the selected date range
   const { data: bookingData, isLoading: bl } = useQuery({
     queryKey: ['analytics-bookings', range],
     queryFn: () => analyticsApi.bookings({ range }),
     select: r => r.data,
   })
+  // [API CALL]: Fetches customer retention data for the selected date range
   const { data: customerData, isLoading: cl } = useQuery({
     queryKey: ['analytics-customers', range],
     queryFn: () => analyticsApi.customers({ range }),
     select: r => r.data,
   })
+  // [API CALL]: Fetches total revenue and ROI data (not range-filtered)
   const { data: revenueData, isLoading: rl } = useQuery({
     queryKey: ['analytics-revenue'],
     queryFn: () => analyticsApi.revenue(),
     select: r => r.data,
   })
 
+  // [STATE]: Combined loading state for all three analytics queries
   const loading = bl || cl || rl
 
+  // [DATA TRANSFORM]: Convert byStatus object to array for PieChart consumption, filtering zero-value entries
   const statusPieData = bookingData
     ? Object.entries(bookingData.byStatus || {}).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }))
     : []
 
+  // [DATA TRANSFORM]: Map numeric day-of-week counts to labelled objects for BarChart
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const dayData = (bookingData?.byDayOfWeek || []).map((count, i) => ({ day: dayLabels[i], count }))
 
@@ -76,7 +153,7 @@ export default function AnalyticsPage() {
         <StatCard icon={<BarChart3 className="w-5 h-5" />} label="Total Bookings" value={bookingData?.total ?? '—'} color="blue" />
         <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Showup Rate" value={bookingData ? fmt.percent(bookingData.showupRate) : '—'} color="green" />
         <StatCard icon={<Users className="w-5 h-5" />} label="Return Rate" value={customerData ? fmt.percent(customerData.returnRate) : '—'} sub={`Avg ${customerData?.avgVisitsPerCustomer ?? '—'} visits/customer`} color="purple" />
-        <StatCard icon={<DollarSign className="w-5 h-5" />} label="ROI Multiple" value={revenueData ? `${revenueData.roiData.roiMultiple}x` : '—'} sub="revenue vs cost" color="amber" />
+        <StatCard icon={<DollarSign className="w-5 h-5" />} label="ROI Multiple" value={revenueData?.roiData ? `${revenueData.roiData.roiMultiple}x` : '—'} sub="revenue vs cost" color="amber" />
       </div>
 
       {loading ? (
@@ -164,6 +241,7 @@ export default function AnalyticsPage() {
               </AreaChart>
             </ResponsiveContainer>
 
+            {/* [UI]: ROI summary row shown only when roiData is available */}
             {revenueData?.roiData && (
               <div className="grid grid-cols-3 gap-3 mt-4">
                 {[

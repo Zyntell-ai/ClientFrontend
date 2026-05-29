@@ -1,3 +1,47 @@
+/**
+ * @file        DashboardPage.jsx
+ * @module      Dashboard
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Renders the main business dashboard with stat cards, recent bookings, hot leads, commission summary, and an onboarding checklist strip.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React, useState
+ *   - @tanstack/react-query (useQuery)
+ *   - react-router-dom (Link)
+ *   - authStore (Zustand)
+ *   - businessApi, onboardingApi
+ *   - DashboardLayout
+ *   - UI components: StatCard, Card, Spinner, EmptyState, Avatar, Alert, Badge
+ *   - utils: fmt, BOOKING_STATUS_COLORS, LEAD_QUALITY_CONFIG, CATEGORY_ICONS
+ *   - lucide-react icons
+ *   - date-fns (format)
+ *   - clsx
+ *
+ * @sideEffects
+ *   - GET /api/dashboard — fetches stats, recent bookings, hot leads, and commission summary; auto-refetches every 60 s
+ *   - GET /api/onboarding/status — fetches setup checklist state for the onboarding strip
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 // src/pages/dashboard/DashboardPage.jsx
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -11,6 +55,30 @@ import { Calendar, Users, DollarSign, Clock, Target, TrendingUp, ArrowRight, Ale
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+// [UI]: Onboarding checklist item definitions — key maps to API response, link targets the relevant settings page
+const ONBOARDING_ITEMS = [
+  { key: 'phoneNumberPurchased',   label: 'Phone number',    link: '/numbers'  },
+  { key: 'atLeastOneService',      label: 'Add service',     link: '/services' },
+  { key: 'workingHoursConfigured', label: 'Set hours',       link: '/settings' },
+  { key: 'coordinatesSet',         label: 'Set location',    link: '/settings' },
+  { key: 'botPersonaSet',          label: 'Bot persona',     link: '/settings' },
+  { key: 'languageSet',            label: 'Bot language',    link: '/settings' },
+]
+
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+/**
+ * @function    useFocusMode
+ * @purpose     Manages a single-focus state across a fixed number of items — focused item is highlighted, others are dimmed
+ * @param  {number} count - Total number of focusable items
+ * @returns {{ toggle: function, stateOf: function, hasFocus: boolean }}
+ */
 // ─── Focus Mode hook ──────────────────────────────────────────
 function useFocusMode(count) {
   const [focused, setFocused] = useState(null)
@@ -22,6 +90,15 @@ function useFocusMode(count) {
   return { toggle, stateOf, hasFocus: focused !== null }
 }
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    OnboardingStrip
+ * @purpose     Fetches setup checklist status and renders a progress strip with action links; hidden when all steps are complete
+ * @returns {JSX.Element|null} Onboarding progress strip or null if complete / not loaded
+ */
 // ─── Onboarding checklist ─────────────────────────────────────
 function OnboardingStrip() {
   const { data } = useQuery({
@@ -39,6 +116,7 @@ function OnboardingStrip() {
     { key: 'languageSet',            label: 'Bot language',    link: '/settings' },
   ]
   const done = items.filter(i => data.checklist[i.key]).length
+  // [GUARD]: Do not render the strip once all checklist items are completed
   if (done === items.length) return null
   return (
     <div className="mp-card mb-5 p-4" style={{ borderColor: 'rgba(217,119,6,0.25)', background: 'rgba(217,119,6,0.04)' }}>
@@ -51,6 +129,7 @@ function OnboardingStrip() {
         </div>
         <span className="text-xs font-semibold text-amber-600">{done}/{items.length}</span>
       </div>
+      {/* [UI]: Progress bar width driven by completed item ratio */}
       <div className="h-1 rounded-full mb-3" style={{ background: 'rgba(217,119,6,0.12)' }}>
         <div
           className="h-full rounded-full transition-all"
@@ -77,11 +156,21 @@ function OnboardingStrip() {
   )
 }
 
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    DashboardPage
+ * @purpose     Main dashboard page — assembles stat cards, recent bookings panel, hot leads panel, and commission summary within DashboardLayout
+ * @returns {JSX.Element} Full dashboard page layout
+ */
 export default function DashboardPage() {
   const { business } = useAuthStore()
   const catIcon = CATEGORY_ICONS[business?.category] || '🏢'
   const { toggle, stateOf } = useFocusMode(4)
 
+  // [API CALL]: GET /api/dashboard — fetches overview data; auto-refetches every 60 seconds
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn:  () => businessApi.getDashboard(),
@@ -89,6 +178,7 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   })
 
+  // [DATA TRANSFORM]: Destructure API response with safe fallbacks for all sections
   const stats          = data?.stats             || {}
   const recentBookings = data?.recentBookings    || []
   const hotLeads       = data?.hotLeads          || []
@@ -97,9 +187,11 @@ export default function DashboardPage() {
   return (
     <DashboardLayout title="Dashboard" subtitle={`${catIcon} ${business?.name || ''}`}>
 
+      {/* [GUARD]: Only show onboarding strip when setup has not been completed */}
       {business && !business.setupCompleted && <OnboardingStrip />}
 
       {/* Trial banner */}
+      {/* [BUSINESS RULE]: Trial banner only shown while isTrialActive is true */}
       {business?.isTrialActive && (
         <div className="flex items-center gap-3 mb-5 px-4 py-3 rounded-md" style={{ background: 'rgba(217,119,6,0.06)', border: '0.5px solid rgba(217,119,6,0.20)' }}>
           <Clock className="w-4 h-4 text-amber-500 shrink-0" />
@@ -121,6 +213,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* [UI]: Skeleton placeholders shown during initial data load */}
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[...Array(4)].map((_, i) => <div key={i} className="mp-card h-28 animate-pulse" style={{ background: 'var(--mp-a05)' }} />)}
@@ -185,6 +278,7 @@ export default function DashboardPage() {
           ) : (
             <div>
               {recentBookings.map((b, i) => {
+                // [DATA TRANSFORM]: Map booking status string to inline style tokens for badge colouring
                 const statusStyle = {
                   CONFIRMED: { bg: 'rgba(5,150,105,0.08)', text: '#059669', border: 'rgba(5,150,105,0.20)' },
                   PENDING:   { bg: 'rgba(217,119,6,0.08)',  text: '#d97706', border: 'rgba(217,119,6,0.20)'  },
@@ -233,6 +327,7 @@ export default function DashboardPage() {
           ) : (
             <div>
               {hotLeads.map((lead, i) => {
+                // [DATA TRANSFORM]: Resolve lead quality config (colour + label) from shared config map
                 const qCfg = LEAD_QUALITY_CONFIG[lead.quality] || LEAD_QUALITY_CONFIG.COLD
                 return (
                   <div
@@ -283,6 +378,7 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          {/* [UI]: Confirmation rate row only rendered when the metric is present in the API response */}
           {commission.confirmationRate !== undefined && (
             <div className="flex items-center gap-2 mt-4">
               <TrendingUp className="w-3.5 h-3.5" style={{ color: '#059669' }} />

@@ -1,3 +1,40 @@
+/**
+ * @file        NumbersPage.jsx
+ * @module      Virtual Numbers
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Manages the registration, verification, and release of business phone numbers used by the AI bot for WhatsApp and voice interactions.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React (useState)
+ *   - @tanstack/react-query (useQuery, useMutation, useQueryClient)
+ *   - ../../api/index (numbersApi)
+ *   - ../../components/layout/DashboardLayout
+ *   - ../../components/ui/index (Button, Modal, Input, EmptyState, Spinner, Alert, Badge)
+ *   - lucide-react (Phone, Plus, Trash2, CheckCircle2, ArrowRight, ShieldCheck, RefreshCw, Copy)
+ *   - react-hot-toast
+ *   - clsx
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { numbersApi } from '../../api/index'
@@ -10,11 +47,29 @@ import {
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
 // ─── Step 1: Enter phone number ───────────────────────────────
+
+/**
+ * @function    StepEnterNumber
+ * @purpose     Collects the user's business phone number and triggers OTP dispatch.
+ * @param  {Function} props.onSend   - Callback invoked with the validated phone string
+ * @param  {boolean}  props.loading  - Whether the send-OTP mutation is in-flight
+ * @returns {JSX.Element}
+ */
 function StepEnterNumber({ onSend, loading }) {
   const [phone, setPhone] = useState('+91')
 
+  /**
+   * @function    handleSend
+   * @purpose     Validates E.164 phone format before calling onSend.
+   * @returns {void}
+   */
   const handleSend = () => {
+    // [VALIDATION]: Enforce E.164 international format
     if (!/^\+[1-9]\d{6,14}$/.test(phone)) {
       toast.error('Enter a valid number e.g. +919876543210')
       return
@@ -68,6 +123,17 @@ function StepEnterNumber({ onSend, loading }) {
 }
 
 // ─── Step 2: Enter OTP ────────────────────────────────────────
+
+/**
+ * @function    StepVerifyOtp
+ * @purpose     Collects the 6-digit OTP and submits it for number verification and registration.
+ * @param  {string}   props.phone     - Phone number the OTP was sent to
+ * @param  {Function} props.onVerify  - Callback invoked with the entered OTP string
+ * @param  {Function} props.onResend  - Callback to resend the OTP
+ * @param  {boolean}  props.loading   - Whether the verify mutation is in-flight
+ * @param  {string}   props.devOtp    - Dev-mode OTP pre-fill value (empty in production)
+ * @returns {JSX.Element}
+ */
 function StepVerifyOtp({ phone, onVerify, onResend, loading, devOtp }) {
   // Auto-fill in dev mode
   const [otp, setOtp] = useState(devOtp || '')
@@ -119,7 +185,22 @@ function StepVerifyOtp({ phone, onVerify, onResend, loading, devOtp }) {
 }
 
 // ─── Step 3: Setup instructions ───────────────────────────────
+
+/**
+ * @function    SetupInstructions
+ * @purpose     Displays webhook URLs for WhatsApp and missed-call configuration after a number is successfully registered.
+ * @param  {string}   props.number  - The newly registered phone number
+ * @param  {Object}   props.setup   - Setup payload containing whatsappWebhook and callStatusWebhook URLs
+ * @param  {Function} props.onDone  - Callback to close the modal and reset wizard state
+ * @returns {JSX.Element}
+ */
 function SetupInstructions({ number, setup, onDone }) {
+  /**
+   * @function    copy
+   * @purpose     Copies a string to the system clipboard and shows a success toast.
+   * @param  {string} text - Text to copy
+   * @returns {void}
+   */
   const copy = (text) => {
     navigator.clipboard.writeText(text)
     toast.success('Copied!')
@@ -195,9 +276,16 @@ function SetupInstructions({ number, setup, onDone }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────
+
+/**
+ * @function    NumbersPage
+ * @purpose     Page-level component orchestrating the 3-step number registration wizard and the registered numbers list with release support.
+ * @returns {JSX.Element}
+ */
 export default function NumbersPage() {
   const qc = useQueryClient()
 
+  // [STATE]: Registration wizard state
   const [showRegister, setShowRegister]         = useState(false)
   const [step, setStep]                         = useState(1)
   const [phone, setPhone]                       = useState('')
@@ -206,6 +294,7 @@ export default function NumbersPage() {
   const [registeredNumber, setRegisteredNumber] = useState('')
   const [releaseId, setReleaseId]               = useState(null)
 
+  // [API CALL]: Fetch existing registered numbers
   const { data, isLoading } = useQuery({
     queryKey: ['numbers'],
     queryFn:  numbersApi.list,
@@ -213,6 +302,7 @@ export default function NumbersPage() {
   })
 
   // Step 1 — Send OTP
+  // [API CALL]: Request OTP for the entered phone number
   const sendOtpMutation = useMutation({
     mutationFn: (phoneNumber) => numbersApi.sendOtp({ phoneNumber }),
     onSuccess: (res, phoneNumber) => {
@@ -232,6 +322,7 @@ export default function NumbersPage() {
   })
 
   // Step 2 — Verify OTP + Register
+  // [API CALL]: Verify OTP and register the number on the platform
   const verifyMutation = useMutation({
     mutationFn: (otp) => numbersApi.verifyRegister({ phoneNumber: phone, otp }),
     onSuccess: (res) => {
@@ -244,7 +335,7 @@ export default function NumbersPage() {
     onError: e => toast.error(e.response?.data?.error || 'Verification failed'),
   })
 
-  // Release number
+  // [API CALL]: Release (remove) a registered number
   const releaseMutation = useMutation({
     mutationFn: numbersApi.release,
     onSuccess: () => {
@@ -255,6 +346,11 @@ export default function NumbersPage() {
     onError: e => toast.error(e.response?.data?.error || 'Could not remove number'),
   })
 
+  /**
+   * @function    resetModal
+   * @purpose     Resets all registration wizard state and closes the modal.
+   * @returns {void}
+   */
   const resetModal = () => {
     setShowRegister(false)
     setStep(1)
@@ -266,6 +362,9 @@ export default function NumbersPage() {
 
   const numbers = data || []
 
+  // ─────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────
   return (
     <DashboardLayout title="Phone Numbers" subtitle="Manage your AI bot's virtual numbers">
 
@@ -350,6 +449,7 @@ export default function NumbersPage() {
                   { label: 'WhatsApp Msgs', value: num.totalMessages || 0 },
                   {
                     label: 'Registered',
+                    // [DATA TRANSFORM]: Normalise Firestore Timestamp to locale date string
                     value: num.createdAt?.toDate
                       ? new Date(num.createdAt.toDate()).toLocaleDateString('en-IN')
                       : '—'

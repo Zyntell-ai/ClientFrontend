@@ -1,4 +1,42 @@
-// src/pages/leads/LeadsPage.jsx
+/**
+ * @file        LeadsPage.jsx
+ * @module      Leads Management
+ * @project     ClientFrontend
+ * @layer       Page
+ * @description Displays exclusive, broadcast, and auction leads with a time-river expiry visualisation and card view, supporting claim and bid actions.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - React (useState, useEffect)
+ *   - @tanstack/react-query (useQuery, useMutation, useQueryClient)
+ *   - ../../api/index (leadsApi)
+ *   - ../../components/layout/DashboardLayout
+ *   - ../../components/ui/index (Button, Tabs, EmptyState, Spinner, Modal, Input, Alert, Badge)
+ *   - ../../components/ui/TimeRiver
+ *   - ../../utils/index (fmt, LEAD_QUALITY_CONFIG)
+ *   - lucide-react (Target, Clock, CheckCircle2, Lock, Zap, List)
+ *   - react-hot-toast
+ *   - clsx
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsApi } from '../../api/index'
@@ -10,6 +48,9 @@ import { Target, Clock, CheckCircle2, Lock, Zap, List } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
 const TYPE_TABS = [
   { value: 'exclusive', label: '⚡ Exclusive' },
   { value: 'broadcast', label: '📡 Broadcast' },
@@ -21,11 +62,22 @@ const VIEW_TABS = [
   { value: 'cards', label: '⬜ Cards'        },
 ]
 
+// ─────────────────────────────────────────
+// STATE & HOOKS
+// ─────────────────────────────────────────
+
+/**
+ * @function    useCountdown
+ * @purpose     Returns the number of minutes remaining until a given expiry date, recalculating every 30 seconds.
+ * @param  {Date|Object} expiryDate - Firestore Timestamp or JS Date representing the expiry moment
+ * @returns {number} Minutes remaining (clamped to 0)
+ */
 // Countdown to expiry
 function useCountdown(expiryDate) {
   const [left, setLeft] = useState(0)
   useEffect(() => {
     const calc = () => {
+      // [DATA TRANSFORM]: Normalise Firestore Timestamp or plain Date to ms
       const exp = expiryDate?.toDate ? expiryDate.toDate() : new Date(expiryDate)
       setLeft(Math.max(0, Math.floor((exp - Date.now()) / 60000)))
     }
@@ -36,11 +88,27 @@ function useCountdown(expiryDate) {
   return left
 }
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    LeadCard
+ * @purpose     Renders a single lead card with quality badge, commission, expiry countdown, claim button, and optional auction bid form.
+ * @param  {Object}   props.lead     - Lead data object
+ * @param  {Function} props.onClaim  - Callback to claim the lead by id
+ * @param  {Function} props.onBid    - Callback to place a bid { id, amount }
+ * @param  {boolean}  props.claiming - Whether a claim mutation is in-flight
+ * @param  {boolean}  props.bidding  - Whether a bid mutation is in-flight
+ * @returns {JSX.Element}
+ */
 function LeadCard({ lead, onClaim, onBid, claiming, bidding }) {
+  // [STATE]: Resolve quality config, defaulting to COLD
   const qCfg   = LEAD_QUALITY_CONFIG[lead.quality] || LEAD_QUALITY_CONFIG.COLD
   const [bid, setBid]       = useState('')
   const [showBid, setShowBid] = useState(false)
   const timeLeft = useCountdown(lead.exclusiveWindowExpiry || lead.auctionEndsAt)
+  // [BUSINESS RULE]: Flag leads expiring within 30 minutes as urgent
   const urgent   = timeLeft < 30 && timeLeft > 0
 
   return (
@@ -131,11 +199,23 @@ function LeadCard({ lead, onClaim, onBid, claiming, bidding }) {
   )
 }
 
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+
+/**
+ * @function    LeadsPage
+ * @purpose     Page-level component that fetches leads by type, manages claim/bid mutations, and renders the expiry river or cards view.
+ * @returns {JSX.Element}
+ */
 export default function LeadsPage() {
   const qc = useQueryClient()
+
+  // [STATE]: Active lead-type tab and view-mode toggle
   const [tab,      setTab]     = useState('exclusive')
   const [viewMode, setViewMode] = useState('river')
 
+  // [API CALL]: Fetch leads for the selected type, polling every 30 s
   const { data, isLoading } = useQuery({
     queryKey: ['leads', tab],
     queryFn:  () => leadsApi.list({ type: tab }),
@@ -143,12 +223,14 @@ export default function LeadsPage() {
     refetchInterval: 30_000,
   })
 
+  // [API CALL]: Claim a lead by id — unlocks customer contact details
   const claimMutation = useMutation({
     mutationFn: (id) => leadsApi.claim(id),
     onSuccess: () => { toast.success('Lead claimed! Contact unlocked.'); qc.invalidateQueries(['leads']) },
     onError:   e => toast.error(e.response?.data?.error || 'Could not claim lead'),
   })
 
+  // [API CALL]: Place an auction bid for a lead
   const bidMutation = useMutation({
     mutationFn: ({ id, amount }) => leadsApi.bid(id, { amount }),
     onSuccess: () => { toast.success('Bid placed!'); qc.invalidateQueries(['leads']) },
@@ -157,7 +239,7 @@ export default function LeadsPage() {
 
   const leads = data || []
 
-  // Convert leads to TimeRiver items — X axis = expiry time
+  // [DATA TRANSFORM]: Convert leads to TimeRiver items — X axis = expiry time
   const riverItems = leads
     .filter(l => l.exclusiveWindowExpiry || l.auctionEndsAt)
     .map(l => {

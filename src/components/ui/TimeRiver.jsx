@@ -1,16 +1,80 @@
-// src/components/ui/TimeRiver.jsx
-// Horizontal drag-scrollable timeline for bookings and leads
+/**
+ * @file        TimeRiver.jsx
+ * @module      Time River
+ * @project     ClientFrontend
+ * @layer       Component
+ * @description Horizontal drag-scrollable timeline visualization for daily bookings and leads, with "now" indicator, alternating lane bubbles, and focus-expand on click.
+ *
+ * @updated     2026-05-29
+ * @version     1.0.0
+ *
+ * @dependencies
+ *   - react
+ *   - date-fns (format, differenceInMinutes, startOfDay, addMinutes)
+ *   - clsx
+ *   - ../../utils/index (toDate)
+ *
+ * @sideEffects
+ *   - Sets a 60-second interval to update the "now" line position
+ *   - Reads current time via new Date() on mount and every minute
+ */
+
+/*
+ * ╔══════════════════════════════════════════╗
+ * ║           SDLC LIFECYCLE STATUS          ║
+ * ╠══════════════════════════════════════════╣
+ * ║ Planning     : ✅ Complete               ║
+ * ║ Design       : ✅ Complete               ║
+ * ║ Development  : ✅ Complete               ║
+ * ║ Testing      : ⚠️  Partial              ║
+ * ║ Deployment   : ✅ Complete               ║
+ * ║ Maintenance  : 🔄 Active                ║
+ * ╚══════════════════════════════════════════╝
+ */
+
+// ─────────────────────────────────────────
+// IMPORTS & DEPENDENCIES
+// ─────────────────────────────────────────
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { format, differenceInMinutes, startOfDay, addMinutes } from 'date-fns'
 import clsx from 'clsx'
 import { toDate } from '../../utils/index'
 
+// ─────────────────────────────────────────
+// CONSTANTS & CONFIG
+// ─────────────────────────────────────────
+
+/**
+ * @constant    HOUR_PX
+ * @purpose     Pixel width representing one hour on the timeline
+ */
 const HOUR_PX = 120   // pixels per hour
+
+/**
+ * @constant    START_H
+ * @purpose     Timeline start hour (7 AM)
+ */
 const START_H = 7     // 7 AM
+
+/**
+ * @constant    END_H
+ * @purpose     Timeline end hour (10 PM)
+ */
 const END_H   = 22    // 10 PM
+
 const TOTAL_H = END_H - START_H
 const TOTAL_W = TOTAL_H * HOUR_PX + 120
 
+// ─────────────────────────────────────────
+// CORE LOGIC / HANDLER FUNCTIONS
+// ─────────────────────────────────────────
+
+/**
+ * @function    timeToX
+ * @purpose     Convert a Date object to a pixel X position on the timeline
+ * @param  {Date} date - The date/time to convert
+ * @returns {number} Pixel offset from the left edge of the timeline
+ */
 function timeToX(date) {
   const dayStart = startOfDay(date)
   dayStart.setHours(START_H)
@@ -18,30 +82,55 @@ function timeToX(date) {
   return Math.max(0, (mins / 60) * HOUR_PX + 60)
 }
 
+/**
+ * @function    getNowX
+ * @purpose     Get the current time's X position on the timeline
+ * @returns {number} Pixel offset representing "now"
+ */
 function getNowX() {
   const now = new Date()
   return timeToX(now)
 }
 
+// ─────────────────────────────────────────
+// EXPORTS
+// ─────────────────────────────────────────
+
+/**
+ * @function    TimeRiver
+ * @purpose     Renders a horizontally scrollable timeline with draggable items, "now" line, and expandable bubbles
+ * @param  {Array}   props.items     - Array of timeline items (bookings or leads) with id, time, title, subtitle, badge, status/quality
+ * @param  {string}  props.mode      - Display mode: "bookings" | "leads" (controls bubble colors)
+ * @param  {string}  props.emptyText - Message displayed when items array is empty
+ * @returns {JSX.Element} Scrollable timeline visualization or empty state
+ */
 export default function TimeRiver({ items = [], mode = 'bookings', emptyText = 'Nothing scheduled today' }) {
+  // ─────────────────────────────────────────
+  // STATE & HOOKS
+  // ─────────────────────────────────────────
   const wrapRef   = useRef(null)
+  // [STATE]: Track which bubble is currently focused/expanded
   const [focused, setFocused]   = useState(null)
+  // [STATE]: Track the pixel position of the "now" line
   const [nowX, setNowX]         = useState(getNowX)
   const isDragging = useRef(false)
   const startX     = useRef(0)
   const scrollLeft = useRef(0)
 
-  // Update "now" line every minute
+  // Update "now" line every minute and scroll to current time on mount
   useEffect(() => {
     const t = setInterval(() => setNowX(getNowX()), 60000)
-    // Scroll to now on mount
+    // [STATE]: Scroll to current time position on initial render
     if (wrapRef.current) {
       wrapRef.current.scrollLeft = Math.max(0, getNowX() - 200)
     }
     return () => clearInterval(t)
   }, [])
 
-  // Drag scroll
+  /**
+   * @function    onMouseDown
+   * @purpose     Initiate drag scroll on mouse press
+   */
   const onMouseDown = useCallback(e => {
     isDragging.current = true
     startX.current     = e.pageX - (wrapRef.current?.offsetLeft || 0)
@@ -49,6 +138,10 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
     if (wrapRef.current) wrapRef.current.style.cursor = 'grabbing'
   }, [])
 
+  /**
+   * @function    onMouseMove
+   * @purpose     Scroll the timeline container while dragging
+   */
   const onMouseMove = useCallback(e => {
     if (!isDragging.current || !wrapRef.current) return
     e.preventDefault()
@@ -57,11 +150,16 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
     wrapRef.current.scrollLeft = scrollLeft.current - walk
   }, [])
 
+  /**
+   * @function    onMouseUp
+   * @purpose     End drag scroll and restore default cursor
+   */
   const onMouseUp = useCallback(() => {
     isDragging.current = false
     if (wrapRef.current) wrapRef.current.style.cursor = 'grab'
   }, [])
 
+  // [GUARD]: Render empty state when no items are provided
   if (!items.length) {
     return (
       <div className="flex items-center justify-center py-10 text-sm" style={{ color: 'var(--mp-text)', opacity: 0.4 }}>
@@ -70,7 +168,7 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
     )
   }
 
-  // Assign vertical lanes (alternating above/below center line)
+  // [DATA TRANSFORM]: Assign vertical lanes (alternating above/below center line)
   const withLanes = items.map((item, i) => ({ ...item, lane: i % 2 === 0 ? 'above' : 'below' }))
 
   return (
@@ -166,13 +264,14 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
           const above = item.lane === 'above'
           const isFocused = focused === item.id
 
-          // Urgency color for leads
+          // [DATA TRANSFORM]: Urgency color for leads based on quality
           let bg = 'var(--mp-accent)'
           if (mode === 'leads') {
             if (item.quality === 'HOT')  bg = '#dc2626'
             else if (item.quality === 'WARM') bg = '#d97706'
             else bg = '#0369a1'
           }
+          // [DATA TRANSFORM]: Status color for bookings based on booking status
           if (mode === 'bookings') {
             if (item.status === 'COMPLETED') bg = '#059669'
             else if (item.status === 'CANCELLED') bg = '#94a3b8'
