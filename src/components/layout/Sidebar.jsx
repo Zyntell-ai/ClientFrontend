@@ -48,7 +48,7 @@ import clsx from 'clsx'
 import {
   LayoutDashboard, Calendar, Users, Briefcase, UserCheck,
   BarChart3, Receipt, DollarSign, Phone, Settings,
-  LogOut, Target, Bot, Zap
+  LogOut, Target, Bot
 } from 'lucide-react'
 
 // ─────────────────────────────────────────
@@ -149,23 +149,26 @@ export default function Sidebar({ collapsed, onToggle }) {
       >
         {collapsed ? (
           <div className="flex items-center justify-center">
-            <Zap className="w-5 h-5" style={{ color: 'var(--mp-sidebar-text)', opacity: 0.8 }} />
+            <img src="/logo.png" alt="Zyntell" className="w-7 h-7 object-contain" />
           </div>
         ) : (
-          <>
-            <p
-              className="text-base font-medium leading-none tracking-wide"
-              style={{ fontFamily: 'Lora, Georgia, serif', color: 'var(--mp-sidebar-text)', opacity: 1 }}
-            >
-              Zyntell
-            </p>
-            <p
-              className="text-[8px] mt-1 tracking-widest"
-              style={{ color: 'var(--mp-sidebar-text)', opacity: 0.45, letterSpacing: '0.16em' }}
-            >
-              {today}
-            </p>
-          </>
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="Zyntell" className="w-7 h-7 object-contain flex-shrink-0" />
+            <div>
+              <p
+                className="text-base font-medium leading-none tracking-wide"
+                style={{ fontFamily: 'Lora, Georgia, serif', color: 'var(--mp-sidebar-text)', opacity: 1 }}
+              >
+                Zyntell
+              </p>
+              <p
+                className="text-[8px] mt-1 tracking-widest"
+                style={{ color: 'var(--mp-sidebar-text)', opacity: 0.45, letterSpacing: '0.16em' }}
+              >
+                {today}
+              </p>
+            </div>
+          </div>
         )}
       </div>
 

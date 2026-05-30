@@ -246,9 +246,7 @@ export default function SignupPage() {
       <div className="w-full max-w-lg">
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-glow">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
+          <img src="/logo.png" alt="Zyntell" className="w-8 h-8 object-contain" />
           <span className="font-display font-bold text-slate-100">Zyntell</span>
         </div>
 

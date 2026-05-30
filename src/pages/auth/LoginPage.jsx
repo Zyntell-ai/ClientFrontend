@@ -454,13 +454,7 @@ export default function LoginPage() {
           variants={fadeIn} initial="hidden" animate="show" custom={1}
           className="relative z-10 flex items-center gap-3"
         >
-          <motion.div
-            whileHover={{ rotate: 12, scale: 1.12 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-            className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
-          >
-            <Zap className="w-5 h-5 text-white" />
-          </motion.div>
+          <img src="/logo.png" alt="Zyntell" className="w-9 h-9 object-contain" />
           <span className="font-display font-bold text-white text-lg tracking-tight">Zyntell</span>
         </motion.div>
 
@@ -554,9 +548,7 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex items-center gap-2.5 mb-8 lg:hidden"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-[0_4px_12px_rgba(124,58,237,0.35)]">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
+            <img src="/logo.png" alt="Zyntell" className="w-8 h-8 object-contain" />
             <span className="font-display font-bold text-[#1E1B4B]">Zyntell</span>
           </motion.div>
 
