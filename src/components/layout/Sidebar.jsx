@@ -48,8 +48,9 @@ import clsx from 'clsx'
 import {
   LayoutDashboard, Calendar, Users, Briefcase, UserCheck,
   BarChart3, Receipt, DollarSign, Phone, Settings,
-  LogOut, Target, Bot
+  LogOut, Target, Bot, Lock
 } from 'lucide-react'
+import { hasFeature } from '../../config/plans'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -63,7 +64,8 @@ const NAV = [
   {
     section: 'OVERVIEW', items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+      // [BUSINESS RULE]: Analytics is locked for Trial/Starter — lock icon shown inline without removing the item
+      { to: '/analytics', icon: BarChart3, label: 'Analytics', lockedFeature: 'analyticsDashboard' },
     ]
   },
   {
@@ -234,29 +236,39 @@ export default function Sidebar({ collapsed, onToggle }) {
                 {section}
               </p>
             )}
-            {items.map(({ to, icon: Icon, label, badge }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) => clsx('mp-nav', isActive && 'active', collapsed && 'justify-center px-0')}
-                title={collapsed ? label : undefined}
-              >
-                <Icon className="w-4 h-4 shrink-0" style={{ color: 'var(--mp-sidebar-text)' }} />
-                {!collapsed && <span className="flex-1 text-xs">{label}</span>}
-                {!collapsed && badge && (
-                  <span
-                    className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
-                    style={{
-                      background: 'var(--mp-a10)',
-                      color: 'var(--mp-sidebar-text)',
-                      opacity: 0.8,
-                    }}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </NavLink>
-            ))}
+            {items.map(({ to, icon: Icon, label, badge, lockedFeature }) => {
+              // [BUSINESS RULE]: Show lock icon on nav items whose feature is not available on current plan
+              const isLocked = lockedFeature
+                ? !hasFeature(plan, lockedFeature, business?.featureOverrides || {})
+                : false
+              return (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) => clsx('mp-nav', isActive && 'active', collapsed && 'justify-center px-0')}
+                  title={collapsed ? label : undefined}
+                >
+                  <Icon className="w-4 h-4 shrink-0" style={{ color: 'var(--mp-sidebar-text)' }} />
+                  {!collapsed && <span className="flex-1 text-xs">{label}</span>}
+                  {!collapsed && isLocked && (
+                    // [UI]: Lock icon indicates feature is not on current plan — item stays in place
+                    <Lock className="w-2.5 h-2.5 opacity-40 shrink-0" style={{ color: 'var(--mp-sidebar-text)' }} />
+                  )}
+                  {!collapsed && badge && !isLocked && (
+                    <span
+                      className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
+                      style={{
+                        background: 'var(--mp-a10)',
+                        color: 'var(--mp-sidebar-text)',
+                        opacity: 0.8,
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </NavLink>
+              )
+            })}
           </div>
         ))}
       </nav>

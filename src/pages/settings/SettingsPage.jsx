@@ -43,7 +43,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { businessApi } from '../../api/index'
 import { useAuthStore } from '../../store/authStore'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner } from '../../components/ui/index'
+import { Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner, FeatureGate } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS } from '../../utils/index'
 import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -119,10 +119,11 @@ function BotConfigTab({ settings, onSave, saving }) {
             </div>
           </div>
 
+          {/* [BUSINESS RULE]: Multilingual setting only for Growth/Pro — Telugu+Hindi visible but locked below */}
           <div>
             <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide mb-2">Primary Language</p>
             <div className="flex gap-3">
-              {LANGUAGES.map(({ value, label, flag }) => (
+              {LANGUAGES.filter(l => l.value === 'en').map(({ value, label, flag }) => (
                 <button key={value} onClick={() => set('language', value)}
                   className={clsx('flex items-center gap-2 px-4 py-2.5 rounded-lg border flex-1 transition-all',
                     form.language === value
@@ -133,6 +134,20 @@ function BotConfigTab({ settings, onSave, saving }) {
                   <span className={clsx('text-sm font-medium', form.language === value ? 'text-[#1E1B4B]' : 'text-slate-500')}>{label}</span>
                 </button>
               ))}
+              {/* Multilingual options — gated to Growth/Pro */}
+              <FeatureGate feature="multilingualSupport">
+                {LANGUAGES.filter(l => l.value !== 'en').map(({ value, label, flag }) => (
+                  <button key={value} onClick={() => set('language', value)}
+                    className={clsx('flex items-center gap-2 px-4 py-2.5 rounded-lg border flex-1 transition-all',
+                      form.language === value
+                        ? 'border-violet-400 bg-violet-50'
+                        : 'border-violet-100 bg-white hover:border-violet-200'
+                    )}>
+                    <span className="text-xl">{flag}</span>
+                    <span className={clsx('text-sm font-medium', form.language === value ? 'text-[#1E1B4B]' : 'text-slate-500')}>{label}</span>
+                  </button>
+                ))}
+              </FeatureGate>
             </div>
           </div>
         </div>

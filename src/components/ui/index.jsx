@@ -504,3 +504,6 @@ export function Avatar({ name, size = 'md' }) {
     </div>
   )
 }
+
+// ─── FeatureGate (re-exported for convenience) ────────────────
+export { default as FeatureGate } from './FeatureGate'

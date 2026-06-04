@@ -41,7 +41,7 @@ import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Button, Tabs, EmptyState, Spinner, Modal, Input, Alert, Badge } from '../../components/ui/index'
+import { Button, Tabs, EmptyState, Spinner, Modal, Input, Alert, Badge, FeatureGate } from '../../components/ui/index'
 import TimeRiver from '../../components/ui/TimeRiver'
 import { fmt, LEAD_QUALITY_CONFIG } from '../../utils/index'
 import { Target, Clock, CheckCircle2, Lock, Zap, List } from 'lucide-react'
@@ -259,6 +259,8 @@ export default function LeadsPage() {
 
   return (
     <DashboardLayout title="Leads" subtitle="Exclusive leads & marketplace">
+      {/* [BUSINESS RULE]: Lead qualification gated to Growth and Pro plans */}
+      <FeatureGate feature="leadQualification" overlay className="rounded-xl">
       <div className="space-y-5">
 
         {/* Info strip */}
@@ -322,6 +324,7 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+      </FeatureGate>
     </DashboardLayout>
   )
 }

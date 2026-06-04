@@ -47,7 +47,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Button, Badge, Modal, Input, Select, Tabs, EmptyState, Spinner, Avatar, Alert } from '../../components/ui/index'
+import { Button, Badge, Modal, Input, Select, Tabs, EmptyState, Spinner, Avatar, Alert, FeatureGate } from '../../components/ui/index'
 import TimeRiver from '../../components/ui/TimeRiver'
 import { fmt, BOOKING_STATUS_COLORS, toDate } from '../../utils/index'
 import { Calendar, CheckCircle2, XCircle, KeyRound, List, Waves } from 'lucide-react'
@@ -157,19 +157,21 @@ function BookingDetailModal({ booking, open, onClose }) {
           )}
         </div>
 
-        {/* OTP unlock */}
-        {/* [BUSINESS RULE]: Contact details are masked until the OTP is verified */}
-        {!booking.contactUnlocked && (
-          <Alert type="info">Enter the 4-digit OTP to unlock this customer's contact details</Alert>
-        )}
-        {!booking.contactUnlocked && (
-          <div className="flex gap-2">
-            <Input placeholder="4-digit OTP" value={otp} onChange={e => setOtp(e.target.value)} maxLength={4} className="flex-1" />
-            <Button onClick={() => otpMutation.mutate({ id: booking.id, otp })} loading={otpMutation.isPending} disabled={otp.length !== 4}>
-              <KeyRound className="w-4 h-4" /> Unlock
-            </Button>
-          </div>
-        )}
+        {/* OTP unlock — gated to Growth/Pro (showupVerification) */}
+        <FeatureGate feature="showupVerification">
+          {/* [BUSINESS RULE]: Contact details are masked until the OTP is verified */}
+          {!booking.contactUnlocked && (
+            <Alert type="info">Enter the 4-digit OTP to unlock this customer's contact details</Alert>
+          )}
+          {!booking.contactUnlocked && (
+            <div className="flex gap-2">
+              <Input placeholder="4-digit OTP" value={otp} onChange={e => setOtp(e.target.value)} maxLength={4} className="flex-1" />
+              <Button onClick={() => otpMutation.mutate({ id: booking.id, otp })} loading={otpMutation.isPending} disabled={otp.length !== 4}>
+                <KeyRound className="w-4 h-4" /> Unlock
+              </Button>
+            </div>
+          )}
+        </FeatureGate>
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 pt-2" style={{ borderTop: '0.5px solid var(--mp-card-border)' }}>

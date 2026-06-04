@@ -35,30 +35,16 @@ import apiClient from './apiClient'
  * @returns {Promise<AxiosResponse>} API response
  */
 export const billingApi = {
-  /**
-   * @function    current
-   * @purpose     Fetch the current subscription and billing plan details
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Retrieve active subscription plan details
-  current: () => apiClient.get('/api/billing/current'),
-
-  /**
-   * @function    invoices
-   * @purpose     Fetch the list of past invoices for the authenticated business
-   * @returns {Promise<AxiosResponse>} API response
-   */
+  // [API CALL]: Retrieve active plan + outstanding invoice
+  current:  ()            => apiClient.get('/api/billing/current'),
   // [API CALL]: Retrieve invoice history
-  invoices: () => apiClient.get('/api/billing/invoices'),
-
-  /**
-   * @function    pay
-   * @purpose     Submit a payment for an outstanding invoice or plan upgrade
-   * @param  {object} d - Payment payload (invoiceId, amount, method, etc.)
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Process a billing payment
-  pay: (d) => apiClient.post('/api/billing/pay', d),
+  invoices: ()            => apiClient.get('/api/billing/invoices'),
+  // [API CALL]: Fetch current plan config + available upgrade paths
+  plan:     ()            => apiClient.get('/api/billing/plan'),
+  // [API CALL]: Create Razorpay order for an existing invoice
+  pay:      (d)           => apiClient.post('/api/billing/pay', d),
+  // [API CALL]: Create Razorpay order for a plan upgrade
+  upgrade:  (targetPlan)  => apiClient.post('/api/billing/upgrade', { targetPlan }),
 }
 
 // ─────────────────────────────────────────

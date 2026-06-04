@@ -70,6 +70,24 @@ export const numbersApi = {
    */
   // [API CALL]: Remove a registered virtual phone number
   release:        (id)         => apiClient.delete(`/api/numbers/${id}`),
+
+  /**
+   * @function    search
+   * @purpose     Search available Twilio phone numbers to purchase
+   * @param  {object} params - { country, type, areaCode, contains }
+   * @returns {Promise<AxiosResponse>} { numbers: [{ phoneNumber, friendlyName, ... }] }
+   */
+  // [API CALL]: Search Twilio inventory for available purchasable numbers
+  search:         (params)     => apiClient.get('/api/numbers/search', { params }),
+
+  /**
+   * @function    purchase
+   * @purpose     Purchase a Twilio phone number and auto-configure webhooks
+   * @param  {string} phoneNumber - E.164 phone number to purchase
+   * @returns {Promise<AxiosResponse>} { number, webhooks, note }
+   */
+  // [API CALL]: Purchase and configure a Twilio number for this business
+  purchase:       (phoneNumber) => apiClient.post('/api/numbers/purchase', { phoneNumber }),
 }
 
 // ─────────────────────────────────────────

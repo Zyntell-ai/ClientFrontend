@@ -46,7 +46,7 @@ import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { analyticsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Card, StatCard, Spinner } from '../../components/ui/index'
+import { Card, StatCard, Spinner, FeatureGate } from '../../components/ui/index'
 import { fmt, RANGE_OPTIONS } from '../../utils/index'
 import { BarChart3, TrendingUp, Users, DollarSign } from 'lucide-react'
 import {
@@ -135,6 +135,8 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout title="Analytics" subtitle="Business insights">
+      {/* [BUSINESS RULE]: Analytics is gated to Growth and Pro plans */}
+      <FeatureGate feature="analyticsDashboard" overlay className="rounded-xl mb-6">
       {/* Range selector */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-slate-500">Showing data for selected period</p>
@@ -259,6 +261,7 @@ export default function AnalyticsPage() {
           </Card>
         </div>
       )}
+      </FeatureGate>
     </DashboardLayout>
   )
 }
