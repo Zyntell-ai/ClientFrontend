@@ -51,9 +51,10 @@ import { businessApi, onboardingApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { StatCard, Card, Spinner, EmptyState, Avatar, Alert, Badge } from '../../components/ui/index'
 import { fmt, BOOKING_STATUS_COLORS, LEAD_QUALITY_CONFIG, CATEGORY_ICONS } from '../../utils/index'
-import { Calendar, Users, DollarSign, Clock, Target, TrendingUp, ArrowRight, AlertCircle } from 'lucide-react'
+import { Calendar, Users, DollarSign, Clock, Target, TrendingUp, ArrowRight, AlertCircle, PhoneOff, Mic } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
+import { getPlanConfig } from '../../config/plans'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -169,6 +170,7 @@ export default function DashboardPage() {
   const { business } = useAuthStore()
   const catIcon = CATEGORY_ICONS[business?.category] || '🏢'
   const { toggle, stateOf } = useFocusMode(4)
+  const planCfg = getPlanConfig(business?.plan)
 
   // [API CALL]: GET /api/dashboard — fetches overview data; auto-refetches every 60 seconds
   const { data, isLoading } = useQuery({
@@ -256,6 +258,42 @@ export default function DashboardPage() {
             onClick={() => toggle(3)}
             detail={`Booking commissions + show-up bonuses. Invoice due on 1st of next month.`}
           />
+        </div>
+      )}
+
+      {/* ── Telephony overview (Starter+ plans) ─────────── */}
+      {(planCfg?.features?.missedCallToWhatsApp || planCfg?.features?.aiVoiceAgent) && (
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="mp-rule-bold" style={{ width: 16 }} />
+            <p className="mp-label">Telephony overview</p>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {planCfg.features.missedCallToWhatsApp && (
+              <StatCard
+                icon={<PhoneOff className="w-4 h-4" />}
+                label="Missed call recoveries"
+                value={isLoading ? '…' : (stats.missedCallsRecovered ?? '—')}
+                sub="WhatsApp recovery sent"
+              />
+            )}
+            {planCfg.features.aiVoiceAgent && (
+              <StatCard
+                icon={<Mic className="w-4 h-4" />}
+                label="AI voice calls today"
+                value={isLoading ? '…' : (stats.voiceCallsToday ?? '—')}
+                sub="calls handled by AI"
+              />
+            )}
+            {planCfg.features.aiVoiceAgent && (
+              <StatCard
+                icon={<Calendar className="w-4 h-4" />}
+                label="Booked via voice"
+                value={isLoading ? '…' : (stats.voiceBookings ?? '—')}
+                sub="appointments from AI calls"
+              />
+            )}
+          </div>
         </div>
       )}
 

@@ -497,8 +497,8 @@ export default function NumbersPage() {
       {/* How it works strip */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {[
-          { icon: '📞', title: 'Virtual Number',   desc: 'Customers call or WhatsApp this number to reach your bot' },
-          { icon: '🤖', title: 'AI Handles It',    desc: 'Your bot persona answers, books, and qualifies leads' },
+          { icon: '💬', title: 'WhatsApp Number',  desc: 'Customers WhatsApp this number — AI bot replies and books appointments' },
+          { icon: '🎙️', title: 'Voice AI Number',  desc: 'Exotel voice number for AI Receptionist calls and missed call recovery (Growth+)' },
           { icon: '📊', title: 'You Get Insights', desc: 'All conversations tracked with analytics and lead scoring' },
         ].map(({ icon, title, desc }) => (
           <div key={title} className="glass-card p-4 flex items-start gap-3">
@@ -570,8 +570,11 @@ export default function NumbersPage() {
                     <p className="font-display font-bold text-slate-100 text-xl tracking-wide">{num.phoneNumber}</p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge color={num.isActive ? 'green' : 'slate'}>{num.isActive ? '● Active' : '○ Inactive'}</Badge>
+                      {num.type === 'voice'
+                        ? <Badge color="orange">🎙 Voice (Exotel)</Badge>
+                        : <Badge color="violet">💬 WhatsApp</Badge>}
                       {num.isOwned && <Badge color="blue">Your Number</Badge>}
-                      {!num.isOwned && <Badge color="purple">Twilio</Badge>}
+                      {!num.isOwned && num.type !== 'voice' && <Badge color="purple">Twilio</Badge>}
                       {num.isVerified && <Badge color="green">✓ Verified</Badge>}
                     </div>
                   </div>
@@ -608,7 +611,9 @@ export default function NumbersPage() {
               {num.isActive && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">
                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  Bot is live on this number — customers can call or WhatsApp to get served
+                  {num.type === 'voice'
+                    ? 'AI Receptionist active — AI answers calls and books appointments on this number'
+                    : 'Bot is live on this number — customers can WhatsApp to get served'}
                 </div>
               )}
             </div>

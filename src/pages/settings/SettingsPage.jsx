@@ -45,7 +45,7 @@ import { useAuthStore } from '../../store/authStore'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner, FeatureGate } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS } from '../../utils/index'
-import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin } from 'lucide-react'
+import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -57,6 +57,7 @@ const TABS = [
   { id: 'hours',         label: 'Working Hours',   icon: Clock         },
   { id: 'faqs',          label: 'FAQs / Training', icon: MessageSquare },
   { id: 'notifications', label: 'Notifications',   icon: Bell          },
+  { id: 'voice',         label: 'AI Voice',        icon: Phone         },
 ]
 
 // ─────────────────────────────────────────
@@ -446,6 +447,63 @@ function NotificationsTab({ settings, onSave, saving }) {
   )
 }
 
+// ─── AI Voice Tab ────────────────────────────────────────────
+
+/**
+ * @function    VoiceAITab
+ * @purpose     Configures post-call WhatsApp followup message for AI Receptionist calls.
+ *              Gated to aiVoiceAgent plan feature (Growth/Pro).
+ * @param  {Object}   props.settings - Remote settings object to initialise the form
+ * @param  {Function} props.onSave   - Callback receiving the complete form payload
+ * @param  {boolean}  props.saving   - Whether the save mutation is in-flight
+ */
+function VoiceAITab({ settings, onSave, saving }) {
+  const [form, setForm] = useState({ voiceFollowupMessage: '', ...settings })
+  useEffect(() => { if (settings) setForm(f => ({ ...f, ...settings })) }, [settings])
+
+  return (
+    <FeatureGate feature="aiVoiceAgent" overlay className="rounded-xl">
+      <div className="space-y-5">
+        <Card title="AI Voice Receptionist">
+          <Alert type="info">
+            When a call ends without an appointment, the AI automatically sends a WhatsApp follow-up so the customer can complete booking via chat.
+          </Alert>
+          <div className="mt-4">
+            <Textarea
+              label="Post-call WhatsApp follow-up message"
+              value={form.voiceFollowupMessage || ''}
+              onChange={e => setForm(f => ({ ...f, voiceFollowupMessage: e.target.value }))}
+              rows={4}
+              placeholder={`Hi! I'm the AI assistant for your business. It seems we couldn't complete your booking during the call.\n\nWould you like me to help you schedule an appointment right now? Just reply here!`}
+            />
+            <p className="text-xs text-slate-400 mt-1.5">Sent automatically after AI voice calls that end without a booking confirmation</p>
+          </div>
+        </Card>
+        <Card title="How AI Voice Works">
+          <div className="space-y-2.5">
+            {[
+              { step: '1', text: 'Customer calls your Exotel virtual number' },
+              { step: '2', text: 'AI Receptionist answers and converses in real time' },
+              { step: '3', text: 'AI checks availability and books the appointment' },
+              { step: '4', text: 'If no booking, the follow-up message above is sent on WhatsApp' },
+            ].map(({ step, text }) => (
+              <div key={step} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-violet-600/20 border border-violet-600/30 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] font-bold text-violet-600">{step}</span>
+                </div>
+                <p className="text-xs text-slate-500">{text}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Button className="w-full" loading={saving} onClick={() => onSave(form)}>
+          <Save className="w-4 h-4" /> Save AI Voice Settings
+        </Button>
+      </div>
+    </FeatureGate>
+  )
+}
+
 // ─── Main Settings Page ───────────────────────────────────────
 
 // ─────────────────────────────────────────
@@ -530,6 +588,7 @@ export default function SettingsPage() {
               {activeTab === 'hours'         && <WorkingHoursTab />}
               {activeTab === 'faqs'          && <FaqsTab />}
               {activeTab === 'notifications' && <NotificationsTab settings={settings} onSave={updateMutation.mutate} saving={updateMutation.isPending} />}
+              {activeTab === 'voice'         && <VoiceAITab       settings={settings} onSave={updateMutation.mutate} saving={updateMutation.isPending} />}
             </>
           )}
         </div>

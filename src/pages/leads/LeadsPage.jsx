@@ -118,7 +118,12 @@ function LeadCard({ lead, onClaim, onBid, claiming, bidding }) {
     >
       {/* Top row */}
       <div className="flex items-start justify-between mb-3">
-        <span className={clsx('text-[10px] px-2 py-0.5 rounded-full border font-semibold', qCfg.color)}>{qCfg.label}</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={clsx('text-[10px] px-2 py-0.5 rounded-full border font-semibold', qCfg.color)}>{qCfg.label}</span>
+          {lead.source === 'missed_call' && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full border font-semibold text-orange-600 border-orange-300 bg-orange-50">📵 Missed Call</span>
+          )}
+        </div>
         <div className="text-right">
           <p className="mp-serif text-lg font-semibold" style={{ color: 'var(--mp-accent)' }}>
             {fmt.currency(lead.commissionAmount)}
@@ -152,12 +157,12 @@ function LeadCard({ lead, onClaim, onBid, claiming, bidding }) {
       </div>
 
       {/* Unlocked contact */}
-      {lead.isClaimed && lead.customerPhone && (
+      {lead.isClaimed && (lead.customerPhone || lead.callerPhone) && (
         <div className="mb-3 p-3 rounded-md" style={{ background: 'rgba(5,150,105,0.06)', border: '0.5px solid rgba(5,150,105,0.20)' }}>
           <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5 mb-1">
             <CheckCircle2 className="w-3.5 h-3.5" /> Contact Unlocked
           </p>
-          <p className="text-sm font-medium" style={{ color: 'var(--mp-text)' }}>{lead.customerPhone}</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--mp-text)' }}>{lead.customerPhone || lead.callerPhone}</p>
           {lead.customerName && <p className="text-xs mt-0.5" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>{lead.customerName}</p>}
         </div>
       )}
