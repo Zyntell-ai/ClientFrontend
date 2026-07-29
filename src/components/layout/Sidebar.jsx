@@ -48,7 +48,7 @@ import clsx from 'clsx'
 import {
   LayoutDashboard, Calendar, Users, Briefcase, UserCheck,
   BarChart3, Receipt, DollarSign, Phone, Settings,
-  LogOut, Target, Bot, Lock
+  LogOut, Target, Bot, Lock, Building2, Newspaper
 } from 'lucide-react'
 import { hasFeature } from '../../config/plans'
 
@@ -63,9 +63,13 @@ import { hasFeature } from '../../config/plans'
 const NAV = [
   {
     section: 'OVERVIEW', items: [
-      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
       // [BUSINESS RULE]: Analytics is locked for Trial/Starter — lock icon shown inline without removing the item
-      { to: '/analytics', icon: BarChart3, label: 'Analytics', lockedFeature: 'analyticsDashboard' },
+      { to: '/analytics',    icon: BarChart3,    label: 'Analytics',     lockedFeature: 'analyticsDashboard'   },
+      // [BUSINESS RULE]: Business Twin is locked for Trial/Starter — Growth/Pro only
+      { to: '/business-twin', icon: Building2,   label: 'Business Twin', lockedFeature: 'businessDigitalTwin' },
+      // [BUSINESS RULE]: CEO Report is locked for Trial/Starter — Growth/Pro only
+      { to: '/ceo-report',    icon: Newspaper,   label: 'AI CEO Report', lockedFeature: 'aiCeoReport'         },
     ]
   },
   {

@@ -166,6 +166,41 @@ export const businessApi = {
    */
   // [API CALL]: Delete an FAQ entry
   deleteFaq: (id) => apiClient.delete(`/api/business/faqs/${id}`),
+
+  /**
+   * @function    getTwin
+   * @purpose     Fetch the Business Digital Twin document for the authenticated business.
+   *              Creates an empty (PENDING) twin on first call; triggers background pipeline.
+   * @returns {Promise<AxiosResponse>} API response — { twin: Object }
+   */
+  // [API CALL]: Retrieve or initialise the Business Digital Twin
+  getTwin: () => apiClient.get('/api/business/twin'),
+
+  /**
+   * @function    updateTwin
+   * @purpose     Update manually-overridable identity fields of the Business Digital Twin.
+   * @param  {object} identity - Subset of identity fields (businessName, industry, timezone, etc.)
+   * @returns {Promise<AxiosResponse>} API response — { success: true }
+   */
+  // [API CALL]: Write permitted identity overrides to the Business Digital Twin
+  updateTwin: (identity) => apiClient.put('/api/business/twin', { identity }),
+
+  /**
+   * @function    getCeoReport
+   * @purpose     Fetch today's AI CEO Report for the authenticated business.
+   *              Creates an empty (PENDING) report on first call; triggers background pipeline.
+   * @returns {Promise<AxiosResponse>} API response — { report: Object }
+   */
+  // [API CALL]: Retrieve or initialise today's CEO Report
+  getCeoReport: () => apiClient.get('/api/business/ceo-report'),
+
+  /**
+   * @function    refreshCeoReport
+   * @purpose     Trigger an explicit background pipeline refresh of the CEO Report.
+   * @returns {Promise<AxiosResponse>} API response — { report: Object, refreshTriggered: true }
+   */
+  // [API CALL]: Force a background pipeline refresh of today's CEO Report
+  refreshCeoReport: () => apiClient.put('/api/business/ceo-report', { refresh: true }),
 }
 
 // ─────────────────────────────────────────

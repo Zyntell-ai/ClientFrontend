@@ -56,6 +56,7 @@ import CalendarPage from './pages/bookings/CalendarPage'
 import ServicesPage from './pages/services/ServicesPage'
 import StaffPage from './pages/staff/StaffPage'
 import CustomersPage from './pages/customers/CustomersPage'
+import BusinessDetail from './pages/customers/BusinessDetail'
 import LeadsPage from './pages/leads/LeadsPage'
 import AnalyticsPage from './pages/analytics/AnalyticsPage'
 import BillingPage from './pages/billing/BillingPage'
@@ -63,6 +64,8 @@ import CommissionsPage from './pages/commissions/CommissionsPage'
 import NumbersPage from './pages/numbers/NumbersPage'
 import SettingsPage from './pages/settings/SettingsPage'
 import BotTestPage from './pages/bot-test/BotTestPage'
+import BusinessTwinPage from './pages/business-twin/BusinessTwinPage'
+import CeoReportPage   from './pages/ceo-report/CeoReportPage'
 
 // ─────────────────────────────────────────
 // CORE LOGIC / HANDLER FUNCTIONS
@@ -159,6 +162,7 @@ export default function App() {
         <Route path="/services" element={<RequireAuth><ServicesPage /></RequireAuth>} />
         <Route path="/staff" element={<RequireAuth><StaffPage /></RequireAuth>} />
         <Route path="/customers" element={<RequireAuth><CustomersPage /></RequireAuth>} />
+        <Route path="/customers/:id" element={<RequireAuth><BusinessDetail /></RequireAuth>} />
         <Route path="/leads" element={<RequireAuth><LeadsPage /></RequireAuth>} />
         <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
         <Route path="/billing" element={<RequireAuth><BillingPage /></RequireAuth>} />
@@ -166,6 +170,8 @@ export default function App() {
         <Route path="/numbers" element={<RequireAuth><NumbersPage /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
         <Route path="/bot-test" element={<RequireAuth><BotTestPage /></RequireAuth>} />
+        <Route path="/business-twin" element={<RequireAuth><BusinessTwinPage /></RequireAuth>} />
+        <Route path="/ceo-report"    element={<RequireAuth><CeoReportPage   /></RequireAuth>} />
         {/* [ROUTE]: Fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
       </Routes>

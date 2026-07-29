@@ -61,6 +61,18 @@ export const customersApi = {
    */
   // [API CALL]: Trigger bot re-engagement flow for a customer
   reengage: (id) => apiClient.post(`/api/customers/${id}/reengage`),
+
+  // [API CALL]: Retrieve customer memory record (GET /api/customers/:phone/memory)
+  getMemory: (phone) => apiClient.get(`/api/customers/${encodeURIComponent(phone)}/memory`),
+
+  // [API CALL]: Update customer memory — manualNotes and/or preferences only
+  updateMemory: (phone, data) => apiClient.put(`/api/customers/${encodeURIComponent(phone)}/memory`, data),
+
+  // [API CALL]: Retrieve Customer Digital Twin (GET /api/customers/:phone/twin)
+  getTwin: (phone) => apiClient.get(`/api/customers/${encodeURIComponent(phone)}/twin`),
+
+  // [API CALL]: Update Customer Digital Twin identity overrides (PUT /api/customers/:phone/twin)
+  updateTwin: (phone, data) => apiClient.put(`/api/customers/${encodeURIComponent(phone)}/twin`, data),
 }
 
 // ─────────────────────────────────────────
