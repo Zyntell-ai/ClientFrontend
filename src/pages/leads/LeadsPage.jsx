@@ -223,7 +223,7 @@ export default function LeadsPage() {
   // [API CALL]: Fetch leads for the selected type, polling every 30 s
   const { data, isLoading } = useQuery({
     queryKey: ['leads', tab],
-    queryFn:  () => leadsApi.list({ type: tab }),
+    queryFn:  () => leadsApi.list({ tab }),
     select:   r  => r.data.leads,
     refetchInterval: 30_000,
   })

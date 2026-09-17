@@ -22,7 +22,7 @@ export const PLANS = {
     name: 'Trial',
     price: 0,
     durationDays: 14,
-    badge: 'Free',
+    badge: '₹1,000',
     description: '14-day free trial to explore Zyntell',
     features: {
       whatsappBot: true,

@@ -76,6 +76,29 @@
     box-shadow: 0 4px 20px var(--mp-a10);
   }
 
+  /* Legacy aliases — pre-redesign pages still reference these class names */
+  .glass-card {
+    background: color-mix(in srgb, var(--mp-body) 60%, white);
+    border: 0.5px solid var(--mp-card-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .glass-card:hover {
+    box-shadow: 0 4px 20px var(--mp-a10);
+  }
+  .gradient-border {
+    border-color: var(--mp-a20);
+  }
+  .table-row { transition: background 0.15s ease; }
+  .table-row:hover { background: var(--mp-a05); }
+  .table-cell {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--mp-text);
+    border-bottom: 0.5px solid var(--mp-card-border);
+  }
+
   .mp-card-white {
     background: white;
     border: 0.5px solid var(--mp-card-border);

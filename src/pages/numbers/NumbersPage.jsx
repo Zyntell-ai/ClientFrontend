@@ -39,6 +39,7 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { numbersApi } from '../../api/index'
+import { useAuthStore } from '../../store/authStore'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Modal, Input, EmptyState, Spinner, Alert, Badge } from '../../components/ui/index'
 import {
@@ -372,6 +373,8 @@ function TwilioPurchaseSuccess({ number, webhooks, onDone }) {
  */
 export default function NumbersPage() {
   const qc = useQueryClient()
+  const { isTrialActive } = useAuthStore()
+  const onTrial = isTrialActive()
 
   // [STATE]: Modal open/close and which acquisition mode is active
   const [showModal, setShowModal]   = useState(false)
@@ -475,9 +478,13 @@ export default function NumbersPage() {
 
   /**
    * @function    openMode
-   * @purpose     Opens the modal in a specific acquisition mode
+   * @purpose     Opens the modal in a specific acquisition mode — blocked on trial plans since
+   *              phone numbers require an active paid subscription (enforced server-side too)
    */
-  const openMode = (m) => { setMode(m); setShowModal(true) }
+  const openMode = (m) => {
+    if (onTrial) { toast.error('Upgrade your plan to add a phone number'); return }
+    setMode(m); setShowModal(true)
+  }
 
   const numbers = data || []
 
@@ -494,11 +501,19 @@ export default function NumbersPage() {
   return (
     <DashboardLayout title="Phone Numbers" subtitle="Manage your AI bot's virtual numbers">
 
+      {/* [BUSINESS RULE]: Phone numbers require an active paid plan — surface this upfront rather than
+          letting the user hit a 403 after filling out the OTP/purchase flow */}
+      {onTrial && (
+        <Alert type="warning" className="mb-5">
+          Phone numbers are available on paid plans. Upgrade from the trial plan to register or purchase a number.
+        </Alert>
+      )}
+
       {/* How it works strip */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {[
           { icon: '💬', title: 'WhatsApp Number',  desc: 'Customers WhatsApp this number — AI bot replies and books appointments' },
-          { icon: '🎙️', title: 'Voice AI Number',  desc: 'Exotel voice number for AI Receptionist calls and missed call recovery (Growth+)' },
+          { icon: '🎙️', title: 'Voice AI Number',  desc: 'A dedicated number for AI Receptionist calls and missed call recovery (Growth+)' },
           { icon: '📊', title: 'You Get Insights', desc: 'All conversations tracked with analytics and lead scoring' },
         ].map(({ icon, title, desc }) => (
           <div key={title} className="glass-card p-4 flex items-start gap-3">
@@ -516,10 +531,10 @@ export default function NumbersPage() {
         <h3 className="font-display font-semibold text-[#1E1B4B]">Your Numbers</h3>
         {numbers.length === 0 && (
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => openMode(MODE_OWN)}>
+            <Button variant="secondary" onClick={() => openMode(MODE_OWN)} disabled={onTrial}>
               <Phone className="w-4 h-4" /> Use My Number
             </Button>
-            <Button onClick={() => openMode(MODE_TWILIO)}>
+            <Button onClick={() => openMode(MODE_TWILIO)} disabled={onTrial}>
               <ShoppingCart className="w-4 h-4" /> Buy a Number
             </Button>
           </div>
@@ -571,7 +586,7 @@ export default function NumbersPage() {
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge color={num.isActive ? 'green' : 'slate'}>{num.isActive ? '● Active' : '○ Inactive'}</Badge>
                       {num.type === 'voice'
-                        ? <Badge color="orange">🎙 Voice (Exotel)</Badge>
+                        ? <Badge color="orange">🎙 Voice</Badge>
                         : <Badge color="violet">💬 WhatsApp</Badge>}
                       {num.isOwned && <Badge color="blue">Your Number</Badge>}
                       {!num.isOwned && num.type !== 'voice' && <Badge color="purple">Twilio</Badge>}

@@ -17,7 +17,6 @@
  *   - lucide-react (Plus, Trash2, Mail, Phone)
  *   - ../../utils/index (DAY_LABELS)
  *   - react-hot-toast
- *   - clsx
  */
 
 /*
@@ -41,11 +40,10 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { businessApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Button, Modal, Input, EmptyState, Spinner, Avatar } from '../../components/ui/index'
+import { Button, Modal, Input, EmptyState, Spinner, Avatar, Tabs } from '../../components/ui/index'
 import { Plus, Trash2, Mail, Phone } from 'lucide-react'
 import { DAY_LABELS } from '../../utils/index'
 import toast from 'react-hot-toast'
-import clsx from 'clsx'
 
 // ─────────────────────────────────────────
 // CORE LOGIC / HANDLER FUNCTIONS
@@ -83,13 +81,16 @@ function StaffForm({ onSubmit, loading }) {
         </div>
       </div>
       <div>
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Available Days</p>
+        <p className="mp-label mb-2">Available Days</p>
         <div className="flex gap-1.5">
           {DAY_LABELS.map((day, idx) => (
             <button key={day} type="button" onClick={() => toggleDay(idx)}
-              className={clsx('w-10 h-10 rounded-lg text-xs font-semibold border transition-all',
-                form.availableDays.includes(idx) ? 'bg-violet-600 border-violet-600 text-white' : 'border-violet-100 text-slate-500 hover:border-navy-400/70'
-              )}>{day.slice(0, 2)}</button>
+              className="w-10 h-10 rounded-lg text-xs font-semibold border transition-all"
+              style={
+                form.availableDays.includes(idx)
+                  ? { background: 'var(--mp-accent)', borderColor: 'var(--mp-accent)', color: '#fff' }
+                  : { borderColor: 'var(--mp-card-border)', color: 'var(--mp-text)', opacity: 0.55 }
+              }>{day.slice(0, 2)}</button>
           ))}
         </div>
       </div>
@@ -112,6 +113,8 @@ export default function StaffPage() {
 
   // [STATE]: Add-staff modal visibility
   const [showAdd, setShowAdd] = useState(false)
+  // [STATE]: Active role filter — "all" or a specific role value found in the staff list
+  const [roleFilter, setRoleFilter] = useState('all')
 
   // [API CALL]: Fetch the list of staff for the current business
   const { data, isLoading } = useQuery({ queryKey: ['staff'], queryFn: () => businessApi.getStaff(), select: r => r.data.staff })
@@ -131,9 +134,20 @@ export default function StaffPage() {
 
   const staff = data || []
 
+  // [DATA TRANSFORM]: Derive category tabs from the distinct "role" values present in the staff list —
+  // there's no dedicated staff.category field in the schema, so role doubles as the filterable category
+  const roleTabs = [
+    { value: 'all', label: 'All' },
+    ...Array.from(new Set(staff.map(m => m.role).filter(Boolean))).map(r => ({ value: r, label: r })),
+  ]
+  const visibleStaff = roleFilter === 'all' ? staff : staff.filter(m => m.role === roleFilter)
+
   return (
     <DashboardLayout title="Staff" subtitle="Your team members">
-      <div className="flex justify-end mb-5">
+      <div className="flex items-center justify-between mb-5">
+        {roleTabs.length > 2 ? (
+          <Tabs tabs={roleTabs} active={roleFilter} onChange={setRoleFilter} />
+        ) : <div />}
         <Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add Staff</Button>
       </div>
 
@@ -141,30 +155,35 @@ export default function StaffPage() {
         <div className="flex justify-center py-12"><Spinner size="lg" /></div>
       ) : staff.length === 0 ? (
         <EmptyState icon="👥" title="No staff yet" description="Add team members to assign them to bookings" action={<Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add Staff</Button>} />
+      ) : visibleStaff.length === 0 ? (
+        <EmptyState icon="👥" title="No staff in this category" description="Try a different role filter" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {staff.map((m) => (
-            <div key={m.id} className="glass-card gradient-border p-5 group">
+          {visibleStaff.map((m) => (
+            <div key={m.id} className="mp-card p-5 group">
               <div className="flex items-start gap-3 mb-4">
                 <Avatar name={m.name} size="lg" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-display font-semibold text-[#1E1B4B]">{m.name}</p>
-                  <p className="text-xs text-violet-600 mt-0.5">{m.role}</p>
-                  {m.specialization && <p className="text-xs text-slate-500 mt-0.5">{m.specialization}</p>}
+                  <p className="mp-serif font-semibold" style={{ color: 'var(--mp-text)' }}>{m.name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--mp-accent)' }}>{m.role}</p>
+                  {m.specialization && <p className="text-xs mt-0.5" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>{m.specialization}</p>}
                 </div>
                 {/* [UI]: Delete action revealed on card hover */}
-                <button onClick={() => deleteMutation.mutate(m.id)} className="p-1.5 text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                <button onClick={() => deleteMutation.mutate(m.id)} className="p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100" style={{ color: '#dc2626' }}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-              {m.phone && <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-1"><Phone className="w-3 h-3" />{m.phone}</p>}
-              {m.email && <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-3"><Mail className="w-3 h-3" />{m.email}</p>}
+              {m.phone && <p className="text-xs flex items-center gap-1.5 mb-1" style={{ color: 'var(--mp-text)', opacity: 0.55 }}><Phone className="w-3 h-3" />{m.phone}</p>}
+              {m.email && <p className="text-xs flex items-center gap-1.5 mb-3" style={{ color: 'var(--mp-text)', opacity: 0.55 }}><Mail className="w-3 h-3" />{m.email}</p>}
               {/* [UI]: Day availability chips */}
               <div className="flex gap-1">
                 {DAY_LABELS.map((day, idx) => (
-                  <div key={day} className={clsx('w-7 h-7 rounded text-[10px] font-semibold flex items-center justify-center',
-                    (m.availableDays || []).includes(idx) ? 'bg-violet-100 text-violet-600' : 'bg-slate-100 text-slate-400'
-                  )}>{day.slice(0, 2)}</div>
+                  <div key={day} className="w-7 h-7 rounded text-[10px] font-semibold flex items-center justify-center"
+                    style={
+                      (m.availableDays || []).includes(idx)
+                        ? { background: 'var(--mp-a10)', color: 'var(--mp-accent)' }
+                        : { background: 'var(--mp-a05)', color: 'var(--mp-text)', opacity: 0.35 }
+                    }>{day.slice(0, 2)}</div>
                 ))}
               </div>
             </div>

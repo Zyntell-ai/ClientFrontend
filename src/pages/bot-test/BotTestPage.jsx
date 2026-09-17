@@ -52,7 +52,7 @@ import apiClient from '../../api/apiClient'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Alert } from '../../components/ui/index'
 import { CATEGORY_ICONS } from '../../utils/index'
-import { Send, RotateCcw, Bot, Wifi, Check, CheckCheck, Zap, Info, ChevronDown } from 'lucide-react'
+import { Send, RotateCcw, Bot, Wifi, Check, CheckCheck, Zap, Info, ChevronDown, Volume2, Square } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
@@ -229,6 +229,105 @@ function CollapsiblePanel({ title, icon: Icon, children }) {
         <ChevronDown className={clsx('w-3.5 h-3.5 text-slate-400 transition-transform duration-200', open && 'rotate-180')} />
       </button>
       {open && <div className="px-4 pb-4 border-t border-violet-100">{children}</div>}
+    </div>
+  )
+}
+
+/**
+ * @function    VoicePreviewPanel
+ * @purpose     Lets the business hear a sample of the bot's voice using the browser's built-in
+ *              speech synthesis engine. This is a LOCAL PREVIEW ONLY — it does not call the production
+ *              voice pipeline (Sarvam/ElevenLabs over Exotel); no such preview endpoint exists on the
+ *              backend today. Clearly labelled as a browser preview so it's never mistaken for the real thing.
+ * @param  {{ persona: string, sampleText: string }} props
+ * @returns {JSX.Element|null}
+ */
+function VoicePreviewPanel({ persona, sampleText }) {
+  const [voices, setVoices]         = useState([])
+  const [voiceURI, setVoiceURI]     = useState('')
+  const [speaking, setSpeaking]     = useState(false)
+  const [supported, setSupported]   = useState(true)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      setSupported(false)
+      return
+    }
+    const loadVoices = () => {
+      const list = window.speechSynthesis.getVoices()
+      // [DATA TRANSFORM]: Prefer Indian-English voices first since most Zyntell bots speak en-IN/hi-IN
+      const sorted = [...list].sort((a, b) => {
+        const score = (v) => (v.lang?.startsWith('en-IN') ? 0 : v.lang?.startsWith('hi') ? 1 : v.lang?.startsWith('en') ? 2 : 3)
+        return score(a) - score(b)
+      })
+      setVoices(sorted)
+      setVoiceURI(prev => prev || sorted[0]?.voiceURI || '')
+    }
+    loadVoices()
+    window.speechSynthesis.onvoiceschanged = loadVoices
+    return () => { window.speechSynthesis.onvoiceschanged = null }
+  }, [])
+
+  const play = () => {
+    if (!supported) return
+    window.speechSynthesis.cancel()
+    const utter = new SpeechSynthesisUtterance(sampleText)
+    const voice = voices.find(v => v.voiceURI === voiceURI)
+    if (voice) utter.voice = voice
+    utter.onstart = () => setSpeaking(true)
+    utter.onend   = () => setSpeaking(false)
+    utter.onerror = () => setSpeaking(false)
+    window.speechSynthesis.speak(utter)
+  }
+
+  const stop = () => {
+    window.speechSynthesis?.cancel()
+    setSpeaking(false)
+  }
+
+  return (
+    <div className="glass-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Volume2 className="w-3.5 h-3.5 text-violet-500" />
+        <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest">Voice Preview</p>
+      </div>
+      {!supported ? (
+        <p className="text-xs text-slate-500">Voice preview isn't supported in this browser.</p>
+      ) : (
+        <>
+          <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+            Browser preview only — approximates how <strong>{persona}</strong> might sound. This is not
+            the production call voice (Sarvam/ElevenLabs via Exotel).
+          </p>
+          <select
+            value={voiceURI}
+            onChange={e => setVoiceURI(e.target.value)}
+            className="mp-input mb-3"
+          >
+            {voices.map(v => (
+              <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <button
+              onClick={play}
+              disabled={speaking || !voiceURI}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium
+                         bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <Volume2 className="w-3.5 h-3.5" /> Play Sample
+            </button>
+            <button
+              onClick={stop}
+              disabled={!speaking}
+              className="px-3 py-2 rounded-lg text-xs font-medium border border-violet-100 text-slate-500
+                         hover:text-rose-500 hover:border-rose-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <Square className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -443,6 +542,12 @@ export default function BotTestPage() {
               <strong>Backend error:</strong> {error}
             </Alert>
           )}
+
+          {/* Voice preview — browser TTS approximation, not the production call voice */}
+          <VoicePreviewPanel
+            persona={persona}
+            sampleText={settings?.welcomeMessage || `Hi! I'm ${persona} from ${business?.name}. How can I help you today?`}
+          />
 
           {/* Quick scenarios */}
           <div className="glass-card p-4">

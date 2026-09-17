@@ -271,7 +271,7 @@ export default function BookingsPage() {
         {/* View toggle */}
         <div className="flex items-center justify-between">
           <Tabs tabs={VIEW_TABS} active={viewMode} onChange={setViewMode} />
-          <Tabs tabs={STATUS_TABS.slice(0, 4)} active={statusTab} onChange={setStatusTab} />
+          <Tabs tabs={STATUS_TABS} active={statusTab} onChange={setStatusTab} />
         </div>
 
         {/* ── Time River view ───────────────────────────── */}

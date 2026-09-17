@@ -10,7 +10,7 @@
  *
  * @dependencies
  *   - react
- *   - date-fns (format, differenceInMinutes, startOfDay, addMinutes)
+ *   - date-fns (format, differenceInMinutes, addMinutes)
  *   - clsx
  *   - ../../utils/index (toDate)
  *
@@ -36,7 +36,7 @@
 // IMPORTS & DEPENDENCIES
 // ─────────────────────────────────────────
 import React, { useRef, useState, useEffect, useCallback } from 'react'
-import { format, differenceInMinutes, startOfDay, addMinutes } from 'date-fns'
+import { format, differenceInMinutes, addMinutes } from 'date-fns'
 import clsx from 'clsx'
 import { toDate } from '../../utils/index'
 
@@ -50,46 +50,49 @@ import { toDate } from '../../utils/index'
  */
 const HOUR_PX = 120   // pixels per hour
 
-/**
- * @constant    START_H
- * @purpose     Timeline start hour (7 AM)
- */
-const START_H = 7     // 7 AM
-
-/**
- * @constant    END_H
- * @purpose     Timeline end hour (10 PM)
- */
-const END_H   = 22    // 10 PM
-
-const TOTAL_H = END_H - START_H
-const TOTAL_W = TOTAL_H * HOUR_PX + 120
-
 // ─────────────────────────────────────────
 // CORE LOGIC / HANDLER FUNCTIONS
 // ─────────────────────────────────────────
 
 /**
- * @function    timeToX
- * @purpose     Convert a Date object to a pixel X position on the timeline
- * @param  {Date} date - The date/time to convert
- * @returns {number} Pixel offset from the left edge of the timeline
+ * @function    getTimeDomain
+ * @purpose     Computes the [start, end] hour-aligned window that fits every item's time plus "now",
+ *              so items outside a fixed business-hours window (e.g. leads expiring overnight, or
+ *              spanning into the next day) are never clipped off the timeline.
+ * @param  {Array} items - Timeline items, each with a `.time` field
+ * @returns {{ start: Date, totalHours: number }}
  */
-function timeToX(date) {
-  const dayStart = startOfDay(date)
-  dayStart.setHours(START_H)
-  const mins = differenceInMinutes(date, dayStart)
-  return Math.max(0, (mins / 60) * HOUR_PX + 60)
+function getTimeDomain(items) {
+  const now = new Date()
+  const times = [now, ...items.map(i => toDate(i.time)).filter(Boolean)]
+  let min = new Date(Math.min(...times))
+  let max = new Date(Math.max(...times))
+
+  // [GUARD]: Pad 1h on each side so bubbles/labels never sit flush against the edge
+  min = addMinutes(min, -60)
+  max = addMinutes(max, 60)
+
+  // [GUARD]: Enforce a sane minimum span so a single item doesn't render as a full-width sliver
+  if (differenceInMinutes(max, min) < 6 * 60) max = addMinutes(min, 6 * 60)
+
+  // Align start to the top of the hour
+  const start = new Date(min)
+  start.setMinutes(0, 0, 0)
+
+  const totalHours = Math.ceil(differenceInMinutes(max, start) / 60)
+  return { start, totalHours: Math.max(totalHours, 1) }
 }
 
 /**
- * @function    getNowX
- * @purpose     Get the current time's X position on the timeline
- * @returns {number} Pixel offset representing "now"
+ * @function    timeToX
+ * @purpose     Convert a Date object to a pixel X position on the timeline
+ * @param  {Date} date  - The date/time to convert
+ * @param  {Date} start - The timeline's start instant (from getTimeDomain)
+ * @returns {number} Pixel offset from the left edge of the timeline
  */
-function getNowX() {
-  const now = new Date()
-  return timeToX(now)
+function timeToX(date, start) {
+  const mins = differenceInMinutes(date, start)
+  return Math.max(0, (mins / 60) * HOUR_PX + 60)
 }
 
 // ─────────────────────────────────────────
@@ -111,21 +114,27 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
   const wrapRef   = useRef(null)
   // [STATE]: Track which bubble is currently focused/expanded
   const [focused, setFocused]   = useState(null)
-  // [STATE]: Track the pixel position of the "now" line
-  const [nowX, setNowX]         = useState(getNowX)
   const isDragging = useRef(false)
   const startX     = useRef(0)
   const scrollLeft = useRef(0)
 
+  // [DATA TRANSFORM]: Hour-aligned window sized to fit every item + "now" — never clips items
+  // that fall outside a fixed business-hours range (e.g. leads expiring overnight)
+  const { start: domainStart, totalHours } = getTimeDomain(items)
+  const totalW = totalHours * HOUR_PX + 120
+
+  // [STATE]: Track the pixel position of the "now" line
+  const [nowX, setNowX] = useState(() => timeToX(new Date(), domainStart))
+
   // Update "now" line every minute and scroll to current time on mount
   useEffect(() => {
-    const t = setInterval(() => setNowX(getNowX()), 60000)
+    const t = setInterval(() => setNowX(timeToX(new Date(), domainStart)), 60000)
     // [STATE]: Scroll to current time position on initial render
     if (wrapRef.current) {
-      wrapRef.current.scrollLeft = Math.max(0, getNowX() - 200)
+      wrapRef.current.scrollLeft = Math.max(0, timeToX(new Date(), domainStart) - 200)
     }
     return () => clearInterval(t)
-  }, [])
+  }, [domainStart])
 
   /**
    * @function    onMouseDown
@@ -181,14 +190,15 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
     >
-      <div style={{ position: 'relative', width: TOTAL_W, height: '100%', minWidth: TOTAL_W }}>
+      <div style={{ position: 'relative', width: totalW, height: '100%', minWidth: totalW }}>
 
         {/* Hour markers */}
-        {Array.from({ length: TOTAL_H + 1 }, (_, i) => {
-          const h = START_H + i
+        {Array.from({ length: totalHours + 1 }, (_, i) => {
+          const hourDate = addMinutes(domainStart, i * 60)
           const x = 60 + i * HOUR_PX
+          const isDayStart = hourDate.getHours() === 0
           return (
-            <React.Fragment key={h}>
+            <React.Fragment key={i}>
               <div
                 style={{
                   position: 'absolute',
@@ -212,7 +222,7 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
                   whiteSpace: 'nowrap',
                 }}
               >
-                {h === 12 ? '12p' : h < 12 ? `${h}a` : `${h - 12}p`}
+                {isDayStart ? format(hourDate, 'd MMM') : format(hourDate, 'ha').toLowerCase()}
               </span>
             </React.Fragment>
           )
@@ -260,7 +270,7 @@ export default function TimeRiver({ items = [], mode = 'bookings', emptyText = '
 
         {/* Bubbles */}
         {withLanes.map((item) => {
-          const x = timeToX(toDate(item.time) || new Date())
+          const x = timeToX(toDate(item.time) || new Date(), domainStart)
           const above = item.lane === 'above'
           const isFocused = focused === item.id
 

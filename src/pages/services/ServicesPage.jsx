@@ -40,7 +40,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { businessApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Button, Modal, Input, Card, EmptyState, Spinner, Badge } from '../../components/ui/index'
+import { Button, Modal, Input, EmptyState, Spinner, Badge } from '../../components/ui/index'
 import { Plus, Trash2, Pencil, Clock, DollarSign } from 'lucide-react'
 import { fmt } from '../../utils/index'
 import toast from 'react-hot-toast'
@@ -141,23 +141,46 @@ export default function ServicesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.map((svc) => (
-            <div key={svc.id} className="glass-card gradient-border p-5 hover:border-violet-200 transition-all group">
+            <div key={svc.id} className="mp-card p-5 transition-all group">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="font-display font-semibold text-[#1E1B4B] text-sm">{svc.name}</p>
-                  {svc.nameRegional && <p className="text-xs hover:text-violet-600 mt-0.5">{svc.nameRegional}</p>}
+                  <p className="mp-serif text-sm font-semibold" style={{ color: 'var(--mp-text)' }}>{svc.name}</p>
+                  {svc.nameRegional && <p className="text-xs mt-0.5" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>{svc.nameRegional}</p>}
                 </div>
                 {/* [UI]: Edit and delete actions revealed on hover */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => setEditSvc(svc)} className="p-1.5 hover:text-violet-600 hover:text-violet-600 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => deleteMutation.mutate(svc.id)} className="p-1.5 hover:text-violet-600 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setEditSvc(svc)} className="p-1.5 rounded transition-colors" style={{ color: 'var(--mp-accent)' }}><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => deleteMutation.mutate(svc.id)} className="p-1.5 rounded transition-colors" style={{ color: '#dc2626' }}><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
-              {svc.description && <p className="text-xs hover:text-violet-600 mb-3 line-clamp-2">{svc.description}</p>}
-              <div className="flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1 text-slate-400"><Clock className="w-3 h-3" />{fmt.duration(svc.duration)}</span>
-                {svc.price && <span className="flex items-center gap-1 text-emerald-600 font-semibold"><DollarSign className="w-3 h-3" />{fmt.currency(svc.price)}</span>}
-                {svc.priceMin && <span className="text-emerald-600 font-semibold">{fmt.currency(svc.priceMin)}–{fmt.currency(svc.priceMax)}</span>}
+              {svc.description && (
+                <p className="text-xs mb-3 line-clamp-2" style={{ color: 'var(--mp-text)', opacity: 0.6 }}>{svc.description}</p>
+              )}
+              <div className="flex items-center gap-3 text-xs mb-3">
+                <span className="flex items-center gap-1" style={{ color: 'var(--mp-text)', opacity: 0.55 }}>
+                  <Clock className="w-3 h-3" />{fmt.duration(svc.duration)}
+                </span>
+                {svc.price != null && (
+                  <span className="flex items-center gap-1 font-semibold" style={{ color: '#059669' }}>
+                    <DollarSign className="w-3 h-3" />{fmt.currency(svc.price)}
+                  </span>
+                )}
+                {svc.priceMin != null && (
+                  <span className="font-semibold" style={{ color: '#059669' }}>
+                    {fmt.currency(svc.priceMin)}–{fmt.currency(svc.priceMax)}
+                  </span>
+                )}
+              </div>
+              {/* [UI]: Extra metadata footer */}
+              <div className="flex items-center justify-between pt-3" style={{ borderTop: '0.5px solid var(--mp-card-border)' }}>
+                <Badge color={svc.isActive === false ? 'slate' : 'green'}>
+                  {svc.isActive === false ? 'Inactive' : 'Active'}
+                </Badge>
+                {svc.createdAt && (
+                  <span className="text-[10px]" style={{ color: 'var(--mp-text)', opacity: 0.35 }}>
+                    Added {fmt.date(svc.createdAt)}
+                  </span>
+                )}
               </div>
             </div>
           ))}

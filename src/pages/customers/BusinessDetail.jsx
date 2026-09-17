@@ -37,12 +37,17 @@ export default function BusinessDetail() {
   )
 
   // [API CALL]: Load customer profile + booking history
-  const { data: customerData, isLoading: customerLoading } = useQuery({
+  // [BUSINESS RULE]: Retries transient failures (e.g. cold-start backend) before surfacing an error,
+  // so a temporary network hiccup doesn't get misreported as "customer not found"
+  const { data: customerData, isLoading: customerLoading, isError: customerErrored, error: customerError, refetch: refetchCustomer } = useQuery({
     queryKey: ['customer', id],
     queryFn: () => customersApi.get(id),
     select: r => r.data,
     enabled: !!id,
+    retry: (failureCount, err) => err?.response?.status !== 404 && failureCount < 2,
   })
+
+  const isGenuinelyNotFound = customerErrored && customerError?.response?.status === 404
 
   const customer = customerData?.customer
   const phone    = customer?.phone
@@ -127,9 +132,18 @@ export default function BusinessDetail() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
           <Spinner />
         </div>
-      ) : !customer ? (
+      ) : isGenuinelyNotFound ? (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--mp-text-muted)', fontSize: '14px' }}>
           Customer not found.
+        </div>
+      ) : customerErrored || !customer ? (
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <p style={{ color: 'var(--mp-text-muted)', fontSize: '14px', marginBottom: '14px' }}>
+            Couldn't load this customer right now. This is usually a temporary connection issue.
+          </p>
+          <button className="mp-btn mp-btn-secondary" onClick={() => refetchCustomer()}>
+            Try Again
+          </button>
         </div>
       ) : (
         <div style={{

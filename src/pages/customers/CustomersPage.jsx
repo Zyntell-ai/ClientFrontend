@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { customersApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { EmptyState, Avatar, Table, Badge } from '../../components/ui/index'
+import { EmptyState, Avatar, Table } from '../../components/ui/index'
 import { fmt } from '../../utils/index'
 
 export default function CustomersPage() {
@@ -33,25 +33,32 @@ export default function CustomersPage() {
         />
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <Table headers={['Customer', 'Phone', 'Bookings', 'Last Visit', 'Actions']} loading={isLoading} empty="No customers yet">
+      <div className="mp-card overflow-hidden">
+        <Table headers={['Customer', 'Phone', 'Bookings', 'Last Visit', '']} loading={isLoading} empty="No customers yet">
           {customers.map((c) => (
             <tr
               key={c.id}
-              className="table-row cursor-pointer"
+              className="mp-tr"
+              style={{ cursor: 'pointer' }}
               onClick={() => navigate(`/customers/${c.id}`)}
             >
-              <td className="table-cell">
+              <td className="mp-td">
                 <div className="flex items-center gap-2.5">
                   <Avatar name={c.name} size="sm" />
-                  <span className="font-medium text-slate-200">{c.name}</span>
+                  <span className="font-medium" style={{ color: 'var(--mp-text)' }}>{c.name}</span>
                 </div>
               </td>
-              <td className="table-cell text-slate-400">{c.phone || '—'}</td>
-              <td className="table-cell text-slate-400">{c.totalBookings || 0}</td>
-              <td className="table-cell text-slate-500">{fmt.ago(c.lastBookingAt)}</td>
-              <td className="table-cell">
-                <Badge color="accent">View</Badge>
+              <td className="mp-td" style={{ opacity: 0.65 }}>{c.phone || '—'}</td>
+              <td className="mp-td" style={{ opacity: 0.65 }}>{c.totalBookings || 0}</td>
+              <td className="mp-td" style={{ opacity: 0.5 }}>{fmt.ago(c.lastBookingAt)}</td>
+              <td className="mp-td">
+                <button
+                  className="text-xs px-3 py-1 rounded-md transition-all"
+                  style={{ color: 'var(--mp-accent)', background: 'var(--mp-a05)', border: '0.5px solid var(--mp-card-border)' }}
+                  onClick={(e) => { e.stopPropagation(); navigate(`/customers/${c.id}`) }}
+                >
+                  View
+                </button>
               </td>
             </tr>
           ))}
