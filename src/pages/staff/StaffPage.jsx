@@ -57,8 +57,13 @@ import toast from 'react-hot-toast'
  * @returns {JSX.Element}
  */
 function StaffForm({ onSubmit, loading }) {
-  // [STATE]: New staff form initialised with weekday defaults
-  const [form, setForm] = useState({ name: '', role: '', specialization: '', email: '', phone: '', availableDays: [1, 2, 3, 4, 5] })
+  // [STATE]: New staff form initialised with weekday defaults. startTime/endTime start BLANK
+  // (never a guessed default) — the backend (controllers/businessController.js:createStaff)
+  // already stores an empty value as null, and every existing consumer (bookingService.js's
+  // getAvailableSlots, the voice receptionist prompt) already falls back to the business's own
+  // general working hours whenever a staff member's startTime/endTime is absent — so leaving
+  // these blank here is byte-for-byte the same behavior as today, not a new fallback to build.
+  const [form, setForm] = useState({ name: '', role: '', specialization: '', email: '', phone: '', availableDays: [1, 2, 3, 4, 5], startTime: '', endTime: '' })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   /**
@@ -93,6 +98,16 @@ function StaffForm({ onSubmit, loading }) {
               }>{day.slice(0, 2)}</button>
           ))}
         </div>
+      </div>
+      <div>
+        <p className="mp-label mb-2">Working Hours (optional)</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Start Time" type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} />
+          <Input label="End Time" type="time" value={form.endTime} onChange={e => set('endTime', e.target.value)} />
+        </div>
+        <p className="text-xs mt-1.5" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>
+          Leave blank to use the business's general working hours for this staff member.
+        </p>
       </div>
       <Button className="w-full" loading={loading} onClick={() => onSubmit(form)}>Add Staff Member</Button>
     </div>
@@ -186,6 +201,11 @@ export default function StaffPage() {
                     }>{day.slice(0, 2)}</div>
                 ))}
               </div>
+              {/* [UI]: Staff-specific hours, only shown when actually configured — otherwise this
+                  staff member simply uses the business's general working hours (unchanged behavior). */}
+              {m.startTime && m.endTime && (
+                <p className="text-xs mt-2" style={{ color: 'var(--mp-text)', opacity: 0.55 }}>{m.startTime} – {m.endTime}</p>
+              )}
             </div>
           ))}
         </div>
