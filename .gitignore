@@ -29,3 +29,6 @@ Thumbs.db
 env
 env.local
 .env*
+
+# Committed template (no secrets)
+!.env.example

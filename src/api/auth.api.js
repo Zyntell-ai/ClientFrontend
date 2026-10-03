@@ -60,6 +60,10 @@ export const authApi = {
    */
   // [API CALL]: Retrieve current session user profile
   me:       ()     => apiClient.get('/api/auth/me'),
+
+  // [API CALL]: Change the authenticated account's password — body: { currentPassword, newPassword, confirmPassword }.
+  //             Returns { token, message }: a fresh token for this session (older sessions are signed out).
+  changePassword: (data) => apiClient.post('/api/auth/change-password', data),
 }
 
 // ─────────────────────────────────────────

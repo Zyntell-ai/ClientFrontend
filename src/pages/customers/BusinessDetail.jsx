@@ -2,8 +2,7 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { customersApi } from '../../api/index'
-import { useAuthStore } from '../../store/authStore'
-import { hasFeature } from '../../config/plans'
+import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { FeatureGate, Avatar, Badge, Spinner, Tabs } from '../../components/ui/index'
 import { CustomerMemoryPanel } from '../../components/customer-memory/index'
@@ -21,20 +20,12 @@ export default function BusinessDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { business } = useAuthStore()
   const [activeTab, setActiveTab] = useState('memory')
 
-  const canUseMemory = hasFeature(
-    business?.plan || 'trial',
-    'customerMemory',
-    business?.featureOverrides || {}
-  )
-
-  const canUseTwin = hasFeature(
-    business?.plan || 'trial',
-    'customerDigitalTwin',
-    business?.featureOverrides || {}
-  )
+  // [BUSINESS RULE]: Feature access from /api/billing/plan (false until the plan has loaded)
+  const planFeatures = usePlanFeatures()
+  const canUseMemory = planFeatures.hasFeature('customerMemory')
+  const canUseTwin   = planFeatures.hasFeature('customerDigitalTwin')
 
   // [API CALL]: Load customer profile + booking history
   // [BUSINESS RULE]: Retries transient failures (e.g. cold-start backend) before surfacing an error,

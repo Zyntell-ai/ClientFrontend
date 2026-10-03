@@ -25,8 +25,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Lock } from 'lucide-react'
-import { useAuthStore } from '../../store/authStore'
-import { hasFeature, getPlanThatUnlocks } from '../../config/plans'
+import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 import clsx from 'clsx'
 
 // ─────────────────────────────────────────
@@ -37,7 +36,7 @@ import clsx from 'clsx'
  * @function    FeatureGate
  * @purpose     Conditionally renders children or a locked overlay based on plan features.
  *
- * @param  {string}         feature      - Feature key from plans.js (e.g. 'analyticsDashboard')
+ * @param  {string}         feature      - Backend plan feature key (e.g. 'analyticsDashboard')
  * @param  {React.ReactNode} children    - Content to render when feature is available
  * @param  {string}         [className]  - Extra class names on the wrapper div
  * @param  {string}         [message]    - Override the lock message (optional)
@@ -45,17 +44,24 @@ import clsx from 'clsx'
  * @returns {JSX.Element}
  */
 export default function FeatureGate({ feature, children, className, message, overlay = false }) {
-  const { business } = useAuthStore()
-  const planId    = business?.plan || 'trial'
-  const overrides = business?.featureOverrides || {}
+  // [BUSINESS RULE]: Plan features + admin overrides come from GET /api/billing/plan (UI gate only —
+  // the backend enforces every feature itself). Fails closed: nothing is unlocked until the plan has loaded.
+  const plan = usePlanFeatures()
 
-  // [BUSINESS RULE]: Check plan config + admin overrides — always reference plans.js, never inline
-  const isAvailable = hasFeature(planId, feature, overrides)
+  // [UI]: Plan not loaded yet — neither the feature nor a (possibly wrong) lock message
+  if (plan.status === 'loading') {
+    return <div className={clsx('min-h-24 rounded-xl bg-violet-50/40 animate-pulse', className)} />
+  }
 
-  if (isAvailable) return <>{children}</>
+  if (plan.hasFeature(feature)) return <>{children}</>
 
-  const unlockPlan = getPlanThatUnlocks(feature)
-  const lockMessage = message || `This feature is available on the ${unlockPlan} plan.`
+  const unlockPlan = plan.planThatUnlocks(feature)
+  const lockMessage = message || (
+    plan.status === 'error' ? "We couldn't confirm your plan right now. Please refresh the page."
+      : plan.isDisabledByOverride(feature) ? 'This feature is turned off for your account. Please contact support.'
+        : unlockPlan ? `This feature is available on the ${unlockPlan} plan.`
+          : 'This feature is not included in your current plan.'
+  )
 
   // [UI]: Overlay mode — renders children with a blur + lock on top (useful for charts/tables)
   if (overlay) {

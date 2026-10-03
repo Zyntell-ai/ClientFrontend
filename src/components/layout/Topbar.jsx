@@ -12,7 +12,7 @@
  *   - react
  *   - ../../store/authStore (useAuthStore)
  *   - ../../utils/categoryTheme (getTheme)
- *   - ../../utils/index (PLAN_CONFIG)
+ *   - ../../hooks/usePlanFeatures (useBillingPlan — current plan name from /api/billing/plan)
  *   - lucide-react (ChevronLeft, ChevronRight)
  *   - date-fns (format)
  *
@@ -39,7 +39,7 @@
 import React from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { getTheme } from '../../utils/categoryTheme'
-import { PLAN_CONFIG } from '../../utils/index'
+import { useBillingPlan } from '../../hooks/usePlanFeatures'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -60,9 +60,10 @@ export function Topbar({ collapsed, onToggle, title, subtitle }) {
   // ─────────────────────────────────────────
   // STATE & HOOKS
   // ─────────────────────────────────────────
-  const { business, getPlan } = useAuthStore()
-  const plan    = getPlan()
-  const planCfg = PLAN_CONFIG[plan] || PLAN_CONFIG.trial
+  const { business } = useAuthStore()
+  // [DATA TRANSFORM]: Current plan name from /api/billing/plan (shared cache); placeholder until loaded
+  const { data: planData } = useBillingPlan()
+  const planName = planData?.planConfig?.name || '…'
 
   // [DATA TRANSFORM]: Derive initials from business name for avatar display
   const initials = (business?.name || 'Z').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
@@ -128,7 +129,7 @@ export function Topbar({ collapsed, onToggle, title, subtitle }) {
             border: '0.5px solid var(--mp-card-border)',
           }}
         >
-          {planCfg.label}
+          {planName}
         </span>
 
         {/* [UI]: Avatar */}

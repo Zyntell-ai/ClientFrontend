@@ -50,6 +50,8 @@ export const commissionsApi = {
    */
   // [API CALL]: Retrieve aggregated commission summary data
   summary: () => apiClient.get('/api/commissions/summary'),
+  // [API CALL]: Dispute a commission within 7 days — body: { reason }
+  dispute: (id, reason) => apiClient.post(`/api/commissions/${id}/dispute`, { reason }),
 }
 
 // ─────────────────────────────────────────

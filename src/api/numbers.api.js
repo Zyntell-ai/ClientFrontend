@@ -3,7 +3,8 @@
  * @module      Numbers API
  * @project     ClientFrontend
  * @layer       API
- * @description API functions for virtual phone number management — listing, OTP-based registration flow, and number release.
+ * @description API functions for virtual phone numbers — list the business's active numbers and request a number
+ *              (V1: Zyntell allocates and activates Exotel numbers manually; there is no self-service purchase).
  *
  * @updated     2026-05-29
  * @version     1.0.0
@@ -13,8 +14,8 @@
  *
  * @sideEffects
  *   - HTTP GET request to /api/numbers
- *   - HTTP POST requests to /api/numbers/send-otp, /api/numbers/verify-register
- *   - HTTP DELETE request to /api/numbers/:id
+ *   - HTTP POST request to /api/numbers/requests
+ *   - HTTP GET request to /api/numbers/requests
  */
 
 // ─────────────────────────────────────────
@@ -36,58 +37,13 @@ import apiClient from './apiClient'
  * @returns {Promise<AxiosResponse>} API response
  */
 export const numbersApi = {
-  /**
-   * @function    list
-   * @purpose     Fetch all virtual phone numbers registered to the business
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Retrieve registered virtual numbers
-  list:           ()           => apiClient.get('/api/numbers'),
-
-  /**
-   * @function    sendOtp
-   * @purpose     Send an OTP to a phone number to begin the verification and registration flow
-   * @param  {object} data - Payload containing the phone number to verify
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Initiate phone number OTP verification
-  sendOtp:        (data)       => apiClient.post('/api/numbers/send-otp', data),
-
-  /**
-   * @function    verifyRegister
-   * @purpose     Verify the OTP and complete virtual number registration
-   * @param  {object} data - Payload containing phone number and OTP code
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Complete OTP verification and register the number
-  verifyRegister: (data)       => apiClient.post('/api/numbers/verify-register', data),
-
-  /**
-   * @function    release
-   * @purpose     Release/remove a registered virtual phone number from the business account
-   * @param  {string} id - Number document ID
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Remove a registered virtual phone number
-  release:        (id)         => apiClient.delete(`/api/numbers/${id}`),
-
-  /**
-   * @function    search
-   * @purpose     Search available Twilio phone numbers to purchase
-   * @param  {object} params - { country, type, areaCode, contains }
-   * @returns {Promise<AxiosResponse>} { numbers: [{ phoneNumber, friendlyName, ... }] }
-   */
-  // [API CALL]: Search Twilio inventory for available purchasable numbers
-  search:         (params)     => apiClient.get('/api/numbers/search', { params }),
-
-  /**
-   * @function    purchase
-   * @purpose     Purchase a Twilio phone number and auto-configure webhooks
-   * @param  {string} phoneNumber - E.164 phone number to purchase
-   * @returns {Promise<AxiosResponse>} { number, webhooks, note }
-   */
-  // [API CALL]: Purchase and configure a Twilio number for this business
-  purchase:       (phoneNumber) => apiClient.post('/api/numbers/purchase', { phoneNumber }),
+  // [API CALL]: The business's ACTIVE (live) numbers — allocated-but-not-yet-active numbers are never returned
+  list:          ()     => apiClient.get('/api/numbers'),
+  // [API CALL]: The business's own number requests with status/timestamps/reason (newest first)
+  listRequests:  ()     => apiClient.get('/api/numbers/requests'),
+  // [API CALL]: Request a virtual number — body (all optional): { preferredArea, preferredNumber, notes }.
+  //             Numbers are bought and configured manually by Zyntell (Exotel); nothing is purchased here.
+  createRequest: (data) => apiClient.post('/api/numbers/requests', data),
 }
 
 // ─────────────────────────────────────────

@@ -77,8 +77,8 @@ function StaffForm({ onSubmit, loading }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Full Name *" placeholder="Dr. Priya Sharma" value={form.name} onChange={e => set('name', e.target.value)} />
-        <Input label="Role *" placeholder="Doctor / Stylist / Agent" value={form.role} onChange={e => set('role', e.target.value)} />
+        <Input label="Full Name *" placeholder="Priya Sharma" value={form.name} onChange={e => set('name', e.target.value)} />
+        <Input label="Role *" placeholder="Stylist / Trainer / Consultant" value={form.role} onChange={e => set('role', e.target.value)} />
         <Input label="Specialization" value={form.specialization} onChange={e => set('specialization', e.target.value)} />
         <Input label="Phone" value={form.phone} onChange={e => set('phone', e.target.value)} />
         <div className="col-span-2">

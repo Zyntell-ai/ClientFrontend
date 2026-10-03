@@ -201,6 +201,10 @@ export const businessApi = {
    */
   // [API CALL]: Force a background pipeline refresh of today's CEO Report
   refreshCeoReport: () => apiClient.put('/api/business/ceo-report', { refresh: true }),
+  // [API CALL]: Canonical business location → { location, formattedAddress, readiness }
+  getLocation:    ()  => apiClient.get('/api/business/location'),
+  // [API CALL]: Update address and/or map pin — partial { addressLine1, addressLine2, locality, city, state, pincode, latitude, longitude }
+  updateLocation: (d) => apiClient.put('/api/business/location', d),
 }
 
 // ─────────────────────────────────────────

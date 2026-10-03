@@ -46,6 +46,7 @@ import { useAuthStore } from '../../store/authStore'
 import { onboardingApi, businessApi } from '../../api/index'
 import { Button, Input, Select, Toggle, Alert, Spinner } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS, CATEGORY_LABELS } from '../../utils/index'
+import { categoryDisplayLabel } from '../../utils/customCategory'
 import { Zap, Plus, Trash2, Check, ArrowRight, ArrowLeft, Rocket } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -108,8 +109,8 @@ export default function OnboardingPage() {
     language: 'te',
   })
 
-  const category = business?.category || 'healthcare'
-  const catLabel = CATEGORY_LABELS[category] || 'Business'
+  const category = business?.category || ''
+  const catLabel = categoryDisplayLabel(category, CATEGORY_LABELS)
   const catIcon = CATEGORY_ICONS[category] || '🏢'
 
   // ─────────────────────────────────────────
@@ -317,7 +318,7 @@ export default function OnboardingPage() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Input label="Service Name *" placeholder="e.g., General Consultation" value={svc.name} onChange={e => updateService(i, 'name', e.target.value)} />
+                    <Input label="Service Name *" placeholder="e.g., Standard Service" value={svc.name} onChange={e => updateService(i, 'name', e.target.value)} />
                     <Input label="Regional Name (Optional)" placeholder="Telugu / Hindi name" value={svc.nameRegional} onChange={e => updateService(i, 'nameRegional', e.target.value)} />
                     <Input label="Duration (minutes) *" type="number" min="5" value={svc.duration} onChange={e => updateService(i, 'duration', e.target.value)} />
                     <Input label="Fixed Price (₹)" type="number" placeholder="Leave blank for range" value={svc.price} onChange={e => updateService(i, 'price', e.target.value)} />
@@ -360,8 +361,8 @@ export default function OnboardingPage() {
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <Input label="Full Name *" placeholder="e.g., Dr. Priya Sharma" value={member.name} onChange={e => updateStaff(i, 'name', e.target.value)} />
-                      <Input label="Role *" placeholder="e.g., Doctor, Stylist, Agent" value={member.role} onChange={e => updateStaff(i, 'role', e.target.value)} />
+                      <Input label="Full Name *" placeholder="e.g., Priya Sharma" value={member.name} onChange={e => updateStaff(i, 'name', e.target.value)} />
+                      <Input label="Role *" placeholder="e.g., Stylist, Trainer, Consultant" value={member.role} onChange={e => updateStaff(i, 'role', e.target.value)} />
                       <Input label="Specialization" placeholder="e.g., Dermatology" value={member.specialization || ''} onChange={e => updateStaff(i, 'specialization', e.target.value)} />
                       <Input label="Phone" placeholder="+91 98765 43210" value={member.phone || ''} onChange={e => updateStaff(i, 'phone', e.target.value)} />
                     </div>

@@ -27,13 +27,14 @@
 // ─────────────────────────────────────────
 // IMPORTS & DEPENDENCIES
 // ─────────────────────────────────────────
-import React, { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useMemo, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
 import { commissionsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { StatCard, Badge, Table, EmptyState } from '../../components/ui/index'
+import { StatCard, Badge, Table, EmptyState, Modal, Textarea, Button, Alert } from '../../components/ui/index'
+import toast from 'react-hot-toast'
 import { fmt, toDate } from '../../utils/index'
 import { DollarSign, TrendingUp, CalendarCheck, Wallet } from 'lucide-react'
 
@@ -48,6 +49,8 @@ const STATUS_BADGE = {
   CONFIRMED: 'green',
   PENDING:   'amber',
   CANCELLED: 'red',
+  DISPUTED:  'amber',
+  VOIDED:    'slate',
 }
 
 // [UI]: Type badge color keyed by commission type
@@ -55,6 +58,13 @@ const TYPE_BADGE = {
   BOOKING: 'blue',
   SHOWUP:  'green',
   LEAD:    'purple',
+  CREDIT:  'green',
+}
+
+/** Paise-accurate ₹ for a commission (amountPaise is authoritative) */
+const commissionAmount = (c) => {
+  const paise = Number.isInteger(c.amountPaise) ? c.amountPaise : Math.round((c.amount || 0) * 100)
+  return `₹${(paise / 100).toLocaleString('en-IN', { minimumFractionDigits: paise % 100 ? 2 : 0, maximumFractionDigits: 2 })}`
 }
 
 // ─────────────────────────────────────────
@@ -102,6 +112,22 @@ export default function CommissionsPage() {
   // [API CALL]: Fetches the full list of individual commission records
   const { data: list, isLoading } = useQuery({ queryKey: ['commissions'], queryFn: commissionsApi.list, select: r => r.data.commissions })
 
+  // [STATE]: Commission being disputed (null when the modal is closed)
+  const queryClient = useQueryClient()
+  const [disputeTarget, setDisputeTarget] = useState(null)
+  const [disputeReason, setDisputeReason] = useState('')
+  const disputeMutation = useMutation({
+    mutationFn: () => commissionsApi.dispute(disputeTarget.id, disputeReason.trim()),
+    onSuccess: () => {
+      toast.success('Dispute submitted — our team will review it.')
+      setDisputeTarget(null)
+      setDisputeReason('')
+      queryClient.invalidateQueries({ queryKey: ['commissions'] })
+      queryClient.invalidateQueries({ queryKey: ['commission-summary'] })
+    },
+    onError: (e) => toast.error(e.response?.data?.error || 'Could not submit the dispute'),
+  })
+
   const commissions = list || []
   const trend = useMemo(() => buildMonthlyTrend(commissions), [commissions])
 
@@ -128,7 +154,7 @@ export default function CommissionsPage() {
   }
 
   return (
-    <DashboardLayout title="Commissions" subtitle="Track your earnings from Zyntell">
+    <DashboardLayout title="Commissions" subtitle="Zyntell charges 10% of the service price for each completed booking made through Zyntell">
       {/* [UI]: Summary stat cards row — field names match the real /api/commissions/summary response shape */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <StatCard
@@ -144,8 +170,8 @@ export default function CommissionsPage() {
         />
         <StatCard
           icon={<TrendingUp className="w-5 h-5" />}
-          label="Showup Commissions"
-          value={fmt.currency(summary?.showupCommissions)}
+          label="Lead Commissions"
+          value={fmt.currency(summary?.leadCommissions)}
         />
         <StatCard
           icon={<CalendarCheck className="w-5 h-5" />}
@@ -168,26 +194,68 @@ export default function CommissionsPage() {
 
       {/* [UI]: Commission ledger table */}
       <div className="mp-card overflow-hidden">
-        <Table headers={['Type', 'Amount', 'Booking', 'Status', 'Date']} loading={isLoading} empty="No commissions yet">
+        <Table headers={['Type', 'Amount', 'Service / basis', 'Status', 'Date', '']} loading={isLoading} empty="No commissions yet">
           {commissions.map((c) => (
             <tr key={c.id} className="mp-tr">
               <td className="mp-td">
                 <Badge color={TYPE_BADGE[c.type] || 'slate'}>{c.type}</Badge>
               </td>
-              <td className="mp-td font-semibold" style={{ color: '#059669' }}>{fmt.currency(c.amount)}</td>
-              <td className="mp-td text-xs" style={{ opacity: 0.55 }}>{c.bookingId || '—'}</td>
+              <td className="mp-td font-semibold" style={{ color: '#059669' }}>{commissionAmount(c)}</td>
+              <td className="mp-td text-xs" style={{ opacity: 0.7 }}>
+                {c.model === 'PERCENT_OF_SERVICE_PRICE_SNAPSHOT'
+                  ? `${c.serviceName || 'Service'} · ${c.ratePercent}% of ₹${(c.baseAmountPaise / 100).toLocaleString('en-IN')}`
+                  : (c.bookingId || '—')}
+              </td>
               <td className="mp-td">
                 <Badge color={STATUS_BADGE[c.status] || 'slate'}>{c.status}</Badge>
+                {c.dispute?.status && c.dispute.status !== 'OPEN' && (
+                  <p className="text-[10px] mt-1" style={{ opacity: 0.6 }}>Dispute {c.dispute.status.toLowerCase()}</p>
+                )}
               </td>
               <td className="mp-td" style={{ opacity: 0.5 }}>{fmt.date(c.createdAt)}</td>
+              <td className="mp-td">
+                {c.canDispute && (
+                  <button className="text-xs font-semibold underline" style={{ color: 'var(--mp-accent)' }} onClick={() => setDisputeTarget(c)}>
+                    Dispute
+                  </button>
+                )}
+              </td>
             </tr>
           ))}
         </Table>
         {/* [UI]: Empty state rendered below the table shell when the list is empty */}
         {!isLoading && commissions.length === 0 && (
-          <EmptyState icon="💰" title="No commissions yet" description="Commissions are earned when customers book and show up" />
+          <EmptyState icon="💰" title="No commissions yet" description="A commission is charged when you mark a booking made through Zyntell as completed" />
         )}
       </div>
+
+      {/* [UI]: Dispute a commission (within 7 days) */}
+      <Modal open={!!disputeTarget} onClose={() => setDisputeTarget(null)} title="Dispute Commission">
+        {disputeTarget && (
+          <div className="space-y-4">
+            <Alert type="info">
+              Disputes can be raised within 7 days. The charge is held while our team reviews it, and the
+              outcome will show here.
+            </Alert>
+            <p className="text-sm">
+              {disputeTarget.serviceName || disputeTarget.type} — <strong>{commissionAmount(disputeTarget)}</strong>
+            </p>
+            <Textarea
+              label="Reason"
+              placeholder="Tell us why this charge is not correct"
+              value={disputeReason}
+              maxLength={1000}
+              onChange={(e) => setDisputeReason(e.target.value)}
+            />
+            <div className="flex gap-2.5">
+              <Button variant="secondary" className="flex-1" onClick={() => setDisputeTarget(null)}>Cancel</Button>
+              <Button className="flex-1" disabled={disputeReason.trim().length < 5} loading={disputeMutation.isPending} onClick={() => disputeMutation.mutate()}>
+                Submit Dispute
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </DashboardLayout>
   )
 }

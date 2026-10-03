@@ -204,8 +204,21 @@ export const CATEGORY_THEMES = {
   garage: { $ref: 'automobile' },
 }
 
-// [DATA TRANSFORM]: Default fallback theme when category is unrecognized or absent
-const DEFAULT = CATEGORY_THEMES.healthcare
+// [DATA TRANSFORM]: Category-neutral fallback theme for Other/custom/unknown/missing categories (Phase 1) —
+// never the healthcare palette
+const DEFAULT = {
+  name: 'Zyntell',
+  sidebar: '#EEF0FF',
+  body: '#FBFBFF',
+  accent: '#4F46E5',
+  pop: '#7C3AED',
+  text: '#1E1B4B',
+  sidebarText: '#1E1B4B',
+  sidebarDark: false,
+  cardBorder: 'rgba(79,70,229,0.12)',
+  activeNavBg: 'rgba(79,70,229,0.10)',
+  accentAlpha: 'rgba(79,70,229,',
+}
 
 // ─────────────────────────────────────────
 // CORE LOGIC / HANDLER FUNCTIONS

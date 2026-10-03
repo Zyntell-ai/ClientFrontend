@@ -3,7 +3,7 @@
  * @module      Utilities
  * @project     ClientFrontend
  * @layer       Utility
- * @description Shared utility functions and application-wide constants — date/currency formatters, booking/lead status configs, plan configs, and category metadata.
+ * @description Shared utility functions and application-wide constants — date/currency formatters, booking/lead status configs, and category metadata.
  *
  * @updated     2026-05-29
  * @version     1.0.0
@@ -122,17 +122,6 @@ export const LEAD_QUALITY_CONFIG = {
   MILD_OKAY:    { color: 'text-blue-400 bg-blue-400/10 border-blue-400/25',   label: '🌊 Mild OK' },
   MILD_NOT_OKAY:{ color: 'text-slate-400 bg-slate-400/10 border-slate-400/25',label: '🌫️ Mild NO'},
   COLD:         { color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/25',   label: '❄️ Cold'   },
-}
-
-/**
- * @constant    PLAN_CONFIG
- * @purpose     Display config for subscription plan tiers — label, color class, and badge style
- */
-// [AUTH]: Subscription plan → display label and color class mapping
-export const PLAN_CONFIG = {
-  trial: { label: 'Trial', color: 'text-amber-400', badge: 'bg-amber-400/10 border-amber-400/25 text-amber-400' },
-  plus:  { label: 'Plus',  color: 'text-blue-400',  badge: 'bg-blue-400/10 border-blue-400/25 text-blue-400'   },
-  pro:   { label: 'Pro',   color: 'text-purple-400', badge: 'bg-purple-400/10 border-purple-400/25 text-purple-400' },
 }
 
 /**

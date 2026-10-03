@@ -45,9 +45,11 @@ import { useAuthStore } from '../../store/authStore'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner, FeatureGate } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS } from '../../utils/index'
-import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin, Phone } from 'lucide-react'
+import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin, Phone, UserCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import LocationEditor from '../../components/location/LocationEditor'
+import AccountSettings from '../../components/account/AccountSettings'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -58,6 +60,8 @@ const TABS = [
   { id: 'faqs',          label: 'FAQs / Training', icon: MessageSquare },
   { id: 'notifications', label: 'Notifications',   icon: Bell          },
   { id: 'voice',         label: 'AI Voice',        icon: Phone         },
+  { id: 'location',      label: 'Location',        icon: MapPin        },
+  { id: 'account',       label: 'Account',         icon: UserCircle    },
 ]
 
 // ─────────────────────────────────────────
@@ -80,7 +84,7 @@ function BotConfigTab({ settings, onSave, saving }) {
     welcomeMessage: '', botPersona: 'Priya', botTone: 'friendly', language: 'te',
     allowCancellation: true, cancellationHoursLimit: 2, bookingBufferMinutes: 0,
     maxBookingsPerSlot: 1, autoConfirmBookings: false, conversationCap: 50,
-    address: '', leadExclusiveWindowHours: 2, ...settings,
+    leadExclusiveWindowHours: 2, ...settings,
   })
   // [STATE]: Re-sync form when remote settings load or change
   useEffect(() => { if (settings) setForm(f => ({ ...f, ...settings })) }, [settings])
@@ -177,16 +181,6 @@ function BotConfigTab({ settings, onSave, saving }) {
         </div>
       </Card>
 
-      <Card title="Business Location">
-        <Input label="Full address" value={form.address || ''} onChange={e => set('address', e.target.value)} placeholder="123 Main Street, Banjara Hills, Hyderabad" />
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <Input label="Latitude"  type="number" value={form.coordinates?.lat || ''} onChange={e => set('coordinates', { ...form.coordinates, lat: Number(e.target.value) })} placeholder="17.3850" />
-          <Input label="Longitude" type="number" value={form.coordinates?.lng || ''} onChange={e => set('coordinates', { ...form.coordinates, lng: Number(e.target.value) })} placeholder="78.4867" />
-        </div>
-        <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-          <MapPin className="w-3 h-3" /> Used for GPS check-in verification when customers arrive
-        </p>
-      </Card>
 
       <Button className="w-full" loading={saving} onClick={() => onSave(form)}>
         <Save className="w-4 h-4" /> Save Bot Configuration
@@ -524,7 +518,11 @@ export default function SettingsPage() {
   // ─────────────────────────────────────────
 
   // [STATE]: Active settings tab
-  const [activeTab, setActiveTab] = useState('bot')
+  // [UI]: ?tab=location deep link (e.g. from the go-live checklist)
+  const [activeTab, setActiveTab] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab')
+    return TABS.some((t) => t.id === requested) ? requested : 'bot'
+  })
 
   // [API CALL]: Fetch the consolidated business settings object
   const { data: settings, isLoading } = useQuery({
@@ -535,7 +533,9 @@ export default function SettingsPage() {
 
   // [API CALL]: Persist updated settings
   const updateMutation = useMutation({
-    mutationFn: businessApi.updateSettings,
+    // [DATA]: address/coordinates are no longer settings — the canonical location is edited in the Location tab.
+    // Strip them so a settings save can never send stale legacy values.
+    mutationFn: ({ address, coordinates, ...rest }) => businessApi.updateSettings(rest),
     onSuccess: () => { toast.success('Settings saved!'); qc.invalidateQueries(['settings']) },
     onError: e => toast.error(e.response?.data?.error || 'Failed to save'),
   })
@@ -589,6 +589,8 @@ export default function SettingsPage() {
               {activeTab === 'faqs'          && <FaqsTab />}
               {activeTab === 'notifications' && <NotificationsTab settings={settings} onSave={updateMutation.mutate} saving={updateMutation.isPending} />}
               {activeTab === 'voice'         && <VoiceAITab       settings={settings} onSave={updateMutation.mutate} saving={updateMutation.isPending} />}
+              {activeTab === 'location'      && <LocationEditor />}
+              {activeTab === 'account'       && <AccountSettings />}
             </>
           )}
         </div>

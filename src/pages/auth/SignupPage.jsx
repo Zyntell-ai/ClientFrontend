@@ -52,6 +52,10 @@ import { Button, Input, Alert, Spinner } from '../../components/ui/index'
 import { Zap, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import {
+  withOtherCategory, isOtherCategory, selectCategory, validateCustomCategory, buildRegisterPayload,
+  CUSTOM_CATEGORY_MAX_LENGTH,
+} from '../../utils/customCategory'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -143,7 +147,7 @@ export default function SignupPage() {
   // [STATE]: Current wizard step index (0 = category, 1 = details, 2 = account)
   const [step, setStep] = useState(0) // 0: category, 1: business details, 2: account
   // [STATE]: List of business categories (fetched or fallback)
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+  const [categories, setCategories] = useState(() => withOtherCategory(FALLBACK_CATEGORIES))
   const [loadingCats, setLoadingCats] = useState(true)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -152,7 +156,7 @@ export default function SignupPage() {
   // [STATE]: Flat form object shared across all three steps
   // Form state
   const [form, setForm] = useState({
-    category: '', subCategory: '',
+    category: '', subCategory: '', customCategory: '',
     name: '', city: '', locality: '', phone: '',
     email: '', password: '',
   })
@@ -162,7 +166,7 @@ export default function SignupPage() {
   useEffect(() => {
     categoriesApi.list()
       .then((res) => {
-        if (res.data?.categories?.length) setCategories(res.data.categories)
+        if (res.data?.categories?.length) setCategories(withOtherCategory(res.data.categories))
       })
       .catch(() => {}) // Use fallback silently
       .finally(() => setLoadingCats(false))
@@ -182,6 +186,9 @@ export default function SignupPage() {
 
   // [DATA TRANSFORM]: Resolve selected category object and context-specific extra questions
   const selectedCategory = categories.find(c => c.id === form.category)
+  const isOther = isOtherCategory(form.category)
+  // [UI]: For "Other", the business's own category name is shown wherever the category label is used
+  const categoryLabel = isOther ? (form.customCategory.trim() || 'business') : selectedCategory?.label
   const extraQuestions = CATEGORY_QUESTIONS[form.category] || CATEGORY_QUESTIONS.default
 
   /**
@@ -193,7 +200,11 @@ export default function SignupPage() {
     if (step === 0) {
       // [VALIDATION]: Category and sub-category must both be selected before moving to step 1
       if (!form.category) { setError('Please select your business category'); return false }
-      if (!form.subCategory) { setError('Please select a sub-category'); return false }
+      if (isOther) {
+        // [VALIDATION]: "Other" needs a custom category name instead of a sub-category
+        const customError = validateCustomCategory(form.customCategory)
+        if (customError) { setError(customError); return false }
+      } else if (!form.subCategory) { setError('Please select a sub-category'); return false }
     }
     if (step === 1) {
       // [VALIDATION]: Business name and city are required in step 1
@@ -228,7 +239,7 @@ export default function SignupPage() {
     setError('')
     try {
       // [API CALL]: POST /api/auth/register — creates new business account
-      const res = await authApi.register(form)
+      const res = await authApi.register(buildRegisterPayload(form))
       const { token, business } = res.data
       // [STATE]: Store auth token and business profile in Zustand
       setAuth(token, business)
@@ -289,7 +300,7 @@ export default function SignupPage() {
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => { update('category', cat.id); update('subCategory', '') }}
+                      onClick={() => setForm(f => selectCategory(f, cat.id))}
                       className={clsx(
                         'flex flex-col items-start gap-1 p-3.5 rounded-xl border text-left transition-all duration-200',
                         form.category === cat.id
@@ -307,7 +318,19 @@ export default function SignupPage() {
               )}
 
               {/* Sub-category (shown after category selection) */}
-              {form.category && selectedCategory && (
+              {/* Custom category name (shown only for "Other") */}
+              {isOther && (
+                <Input
+                  label="Your business category"
+                  placeholder="e.g., Veterinary Clinic"
+                  value={form.customCategory}
+                  maxLength={CUSTOM_CATEGORY_MAX_LENGTH}
+                  onChange={e => update('customCategory', e.target.value)}
+                  autoFocus
+                />
+              )}
+
+              {form.category && !isOther && selectedCategory && (
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Sub-category</p>
                   <div className="flex flex-wrap gap-2">
@@ -336,13 +359,13 @@ export default function SignupPage() {
             <div>
               <h2 className="font-display text-xl font-bold text-slate-100 mb-1">Business details</h2>
               <p className="text-slate-500 text-sm mb-6">
-                Tell us about your {selectedCategory?.label || 'business'}
+                Tell us about your {categoryLabel || 'business'}
               </p>
 
               <div className="space-y-4">
                 {/* [UI]: Business name placeholder is contextualised to the selected category */}
                 <Input
-                  label={`${selectedCategory?.label || 'Business'} Name`}
+                  label={`${isOther ? 'Business' : (selectedCategory?.label || 'Business')} Name`}
                   placeholder={`e.g., ${
                     form.category === 'healthcare' ? 'Dr. Kumar Clinic' :
                     form.category === 'restaurant' ? 'Spice Garden Restaurant' :

@@ -13,7 +13,7 @@
  *   - react-router-dom (NavLink, useNavigate)
  *   - ../../store/authStore (useAuthStore)
  *   - ../../utils/categoryTheme (getTheme)
- *   - ../../utils/index (CATEGORY_ICONS, PLAN_CONFIG)
+ *   - ../../utils/index (CATEGORY_ICONS)
  *   - date-fns (format)
  *   - clsx
  *   - lucide-react (various icons)
@@ -42,7 +42,7 @@ import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { getTheme } from '../../utils/categoryTheme'
-import { CATEGORY_ICONS, PLAN_CONFIG } from '../../utils/index'
+import { CATEGORY_ICONS } from '../../utils/index'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import {
@@ -50,7 +50,7 @@ import {
   BarChart3, Receipt, DollarSign, Phone, Settings,
   LogOut, Target, Bot, Lock, Building2, Newspaper
 } from 'lucide-react'
-import { hasFeature } from '../../config/plans'
+import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -115,12 +115,13 @@ export default function Sidebar({ collapsed, onToggle }) {
   // ─────────────────────────────────────────
   // STATE & HOOKS
   // ─────────────────────────────────────────
-  const { business, logout, getPlan } = useAuthStore()
+  const { business, logout } = useAuthStore()
   const navigate = useNavigate()
+  const planFeatures = usePlanFeatures()
 
   // [DATA TRANSFORM]: Resolve plan config, category theme, and display values
-  const plan = getPlan()
-  const planCfg = PLAN_CONFIG[plan] || PLAN_CONFIG.trial
+  // Current plan name from /api/billing/plan (same shared cache as the feature locks); omitted until loaded
+  const planName = planFeatures.planData?.planConfig?.name
   const theme = getTheme(business?.category)
   const catIcon = CATEGORY_ICONS[business?.category] || '🏢'
   const today = format(new Date(), 'EEE dd MMM yyyy').toUpperCase()
@@ -197,7 +198,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                 className="text-[10px] mt-0.5"
                 style={{ color: 'var(--mp-sidebar-text)', opacity: 0.45 }}
               >
-                {theme.name} · {planCfg.label}
+                {theme.name}{planName ? ` · ${planName}` : ''}
               </p>
             </div>
           </div>
@@ -241,10 +242,9 @@ export default function Sidebar({ collapsed, onToggle }) {
               </p>
             )}
             {items.map(({ to, icon: Icon, label, badge, lockedFeature }) => {
-              // [BUSINESS RULE]: Show lock icon on nav items whose feature is not available on current plan
-              const isLocked = lockedFeature
-                ? !hasFeature(plan, lockedFeature, business?.featureOverrides || {})
-                : false
+              // [BUSINESS RULE]: Show lock icon on nav items whose feature is not available (from /api/billing/plan;
+              // shown locked until the plan has loaded)
+              const isLocked = lockedFeature ? !planFeatures.hasFeature(lockedFeature) : false
               return (
                 <NavLink
                   key={to}

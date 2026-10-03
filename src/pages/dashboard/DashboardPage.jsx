@@ -54,7 +54,7 @@ import { fmt, BOOKING_STATUS_COLORS, LEAD_QUALITY_CONFIG, CATEGORY_ICONS } from 
 import { Calendar, Users, DollarSign, Clock, Target, TrendingUp, ArrowRight, AlertCircle, PhoneOff, Mic } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
-import { getPlanConfig } from '../../config/plans'
+import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -100,6 +100,24 @@ function useFocusMode(count) {
  * @purpose     Fetches setup checklist status and renders a progress strip with action links; hidden when all steps are complete
  * @returns {JSX.Element|null} Onboarding progress strip or null if complete / not loaded
  */
+// ─── Go-live readiness: map pin ───────────────────────────────
+/**
+ * @function    LocationReadinessBanner
+ * @purpose     After setup, keeps showing that the business location (map pin) is required to go live
+ */
+function LocationReadinessBanner() {
+  const { data } = useQuery({ queryKey: ['onboarding-status'], queryFn: () => onboardingApi.status(), select: (r) => r.data })
+  if (!data || data.checklist?.locationComplete !== false) return null
+  return (
+    <div className="mp-card mb-5 p-4 flex items-center justify-between gap-3" style={{ borderColor: 'rgba(217,119,6,0.25)', background: 'rgba(217,119,6,0.04)' }}>
+      <p className="text-sm text-amber-800">📍 Your business location is incomplete — a map pin is required before your business can go live.</p>
+      <Link to="/settings?tab=location" className="text-xs font-semibold text-amber-700 px-3 py-1.5 rounded-md hover:bg-amber-50 whitespace-nowrap" style={{ border: '0.5px solid rgba(217,119,6,0.30)' }}>
+        Set location
+      </Link>
+    </div>
+  )
+}
+
 // ─── Onboarding checklist ─────────────────────────────────────
 function OnboardingStrip() {
   const { data } = useQuery({
@@ -109,10 +127,10 @@ function OnboardingStrip() {
   })
   if (!data) return null
   const items = [
-    { key: 'phoneNumberPurchased',   label: 'Phone number',    link: '/numbers'  },
+    { key: 'phoneNumberActive',      label: 'Phone number',    link: '/numbers'  },
     { key: 'atLeastOneService',      label: 'Add service',     link: '/services' },
     { key: 'workingHoursConfigured', label: 'Set hours',       link: '/settings' },
-    { key: 'coordinatesSet',         label: 'Set location',    link: '/settings' },
+    { key: 'locationComplete',       label: 'Set location',    link: '/settings?tab=location' },
     { key: 'botPersonaSet',          label: 'Bot persona',     link: '/settings' },
     { key: 'languageSet',            label: 'Bot language',    link: '/settings' },
   ]
@@ -170,7 +188,10 @@ export default function DashboardPage() {
   const { business } = useAuthStore()
   const catIcon = CATEGORY_ICONS[business?.category] || '🏢'
   const { toggle, stateOf } = useFocusMode(4)
-  const planCfg = getPlanConfig(business?.plan)
+  // [BUSINESS RULE]: Feature access from /api/billing/plan, incl. admin overrides (false until loaded)
+  const planFeatures      = usePlanFeatures()
+  const showMissedCalls   = planFeatures.hasFeature('missedCallToWhatsApp')
+  const showVoice         = planFeatures.hasFeature('aiVoiceAgent')
 
   // [API CALL]: GET /api/dashboard — fetches overview data; auto-refetches every 60 seconds
   const { data, isLoading } = useQuery({
@@ -191,6 +212,7 @@ export default function DashboardPage() {
 
       {/* [GUARD]: Only show onboarding strip when setup has not been completed */}
       {business && !business.setupCompleted && <OnboardingStrip />}
+      {business && business.setupCompleted && <LocationReadinessBanner />}
 
       {/* Trial banner */}
       {/* [BUSINESS RULE]: Trial banner only shown while isTrialActive is true */}
@@ -262,14 +284,14 @@ export default function DashboardPage() {
       )}
 
       {/* ── Telephony overview (Starter+ plans) ─────────── */}
-      {(planCfg?.features?.missedCallToWhatsApp || planCfg?.features?.aiVoiceAgent) && (
+      {(showMissedCalls || showVoice) && (
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="mp-rule-bold" style={{ width: 16 }} />
             <p className="mp-label">Telephony overview</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {planCfg.features.missedCallToWhatsApp && (
+            {showMissedCalls && (
               <StatCard
                 icon={<PhoneOff className="w-4 h-4" />}
                 label="Missed call recoveries"
@@ -277,7 +299,7 @@ export default function DashboardPage() {
                 sub="WhatsApp recovery sent"
               />
             )}
-            {planCfg.features.aiVoiceAgent && (
+            {showVoice && (
               <StatCard
                 icon={<Mic className="w-4 h-4" />}
                 label="AI voice calls today"
@@ -285,7 +307,7 @@ export default function DashboardPage() {
                 sub="calls handled by AI"
               />
             )}
-            {planCfg.features.aiVoiceAgent && (
+            {showVoice && (
               <StatCard
                 icon={<Calendar className="w-4 h-4" />}
                 label="Booked via voice"
