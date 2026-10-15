@@ -45,6 +45,7 @@ import { useAuthStore } from '../../store/authStore'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner, FeatureGate } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS } from '../../utils/index'
+import { hoursSaveErrorMessage } from '../../utils/workingHours'
 import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin, Phone, UserCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -216,7 +217,8 @@ function WorkingHoursTab() {
   const updateMutation = useMutation({
     mutationFn: (h) => businessApi.updateHours({ hours: h }),
     onSuccess: () => { toast.success('Working hours saved!'); qc.invalidateQueries(['hours']) },
-    onError: e => toast.error(e.response?.data?.error || 'Failed to save'),
+    // [UI]: show which day/field the server rejected, not just "Validation failed"
+    onError: (e, sent) => toast.error(hoursSaveErrorMessage(e, sent, DAY_LABELS)),
   })
 
   /**

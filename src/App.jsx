@@ -55,6 +55,7 @@ import BookingsPage from './pages/bookings/BookingsPage'
 import CalendarPage from './pages/bookings/CalendarPage'
 import ServicesPage from './pages/services/ServicesPage'
 import StaffPage from './pages/staff/StaffPage'
+import BusinessKnowledgePage from './pages/business-knowledge/BusinessKnowledgePage'
 import CustomersPage from './pages/customers/CustomersPage'
 import BusinessDetail from './pages/customers/BusinessDetail'
 import LeadsPage from './pages/leads/LeadsPage'
@@ -161,6 +162,7 @@ export default function App() {
         <Route path="/bookings/calendar" element={<RequireAuth><CalendarPage /></RequireAuth>} />
         <Route path="/services" element={<RequireAuth><ServicesPage /></RequireAuth>} />
         <Route path="/staff" element={<RequireAuth><StaffPage /></RequireAuth>} />
+        <Route path="/business-knowledge" element={<RequireAuth><BusinessKnowledgePage /></RequireAuth>} />
         <Route path="/customers" element={<RequireAuth><CustomersPage /></RequireAuth>} />
         <Route path="/customers/:id" element={<RequireAuth><BusinessDetail /></RequireAuth>} />
         <Route path="/leads" element={<RequireAuth><LeadsPage /></RequireAuth>} />

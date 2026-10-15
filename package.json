@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/utils/customCategory.test.js src/utils/planFeatures.test.js src/utils/location.test.js src/utils/account.test.js"
+    "test": "node --test src/utils/customCategory.test.js src/utils/planFeatures.test.js src/utils/location.test.js src/utils/account.test.js src/utils/businessKnowledge.test.js src/utils/workingHours.test.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

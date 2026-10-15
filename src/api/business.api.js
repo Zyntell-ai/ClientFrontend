@@ -142,6 +142,23 @@ export const businessApi = {
   updateSettings: (d) => apiClient.put('/api/business/settings', d),
 
   /**
+   * @function    getKnowledge
+   * @purpose     Fetch the business description and AI instructions (Business Knowledge page)
+   * @returns {Promise<AxiosResponse>} { knowledge: { businessDescription, aiInstructions, updatedAt } }
+   */
+  // [API CALL]: Retrieve Business Knowledge
+  getKnowledge: () => apiClient.get('/api/business/knowledge'),
+
+  /**
+   * @function    updateKnowledge
+   * @purpose     Save either or both Business Knowledge fields (max 5,000 characters each)
+   * @param  {{ businessDescription?: string, aiInstructions?: string }} d - only the fields being changed
+   * @returns {Promise<AxiosResponse>} { knowledge: { businessDescription, aiInstructions, updatedAt } }
+   */
+  // [API CALL]: Save Business Knowledge
+  updateKnowledge: (d) => apiClient.put('/api/business/knowledge', d),
+
+  /**
    * @function    getFaqs
    * @purpose     Fetch all FAQs configured for the business bot
    * @returns {Promise<AxiosResponse>} API response

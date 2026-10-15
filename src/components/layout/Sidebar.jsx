@@ -48,8 +48,9 @@ import clsx from 'clsx'
 import {
   LayoutDashboard, Calendar, Users, Briefcase, UserCheck,
   BarChart3, Receipt, DollarSign, Phone, Settings,
-  LogOut, Target, Bot, Lock, Building2, Newspaper
+  LogOut, Target, Bot, Lock, Building2, Newspaper, BookOpen
 } from 'lucide-react'
+import { confirmLeaveWithUnsavedChanges } from '../../utils/unsavedChanges'
 import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 
 // ─────────────────────────────────────────
@@ -83,6 +84,7 @@ const NAV = [
     section: 'BUSINESS', items: [
       { to: '/services', icon: Briefcase, label: 'Services' },
       { to: '/staff', icon: UserCheck, label: 'Staff' },
+      { to: '/business-knowledge', icon: BookOpen, label: 'Business Knowledge' },
     ]
   },
   {
@@ -130,12 +132,21 @@ export default function Sidebar({ collapsed, onToggle }) {
   // CORE LOGIC / HANDLER FUNCTIONS
   // ─────────────────────────────────────────
 
+  // [UI]: ask before leaving a page with unsaved edits (BrowserRouter has no router-level navigation blocker)
+  const guardNavigation = (e, to) => {
+    if (to === window.location.pathname) return
+    if (!confirmLeaveWithUnsavedChanges()) e.preventDefault()
+  }
+
   /**
    * @function    handleLogout
    * @purpose     Clear auth state and redirect to login page
    */
   // [AUTH]: Clear session and redirect to login on user-initiated logout
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = () => {
+    if (!confirmLeaveWithUnsavedChanges()) return
+    logout(); navigate('/login')
+  }
 
   return (
     <aside
@@ -251,6 +262,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                   to={to}
                   className={({ isActive }) => clsx('mp-nav', isActive && 'active', collapsed && 'justify-center px-0')}
                   title={collapsed ? label : undefined}
+                  onClick={(e) => guardNavigation(e, to)}
                 >
                   <Icon className="w-4 h-4 shrink-0" style={{ color: 'var(--mp-sidebar-text)' }} />
                   {!collapsed && <span className="flex-1 text-xs">{label}</span>}
