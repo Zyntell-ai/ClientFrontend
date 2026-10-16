@@ -161,6 +161,8 @@ export const LANGUAGES = [
   { value: 'en', label: 'English', flag: '🇬🇧' },
   { value: 'hi', label: 'Hindi',   flag: '🇮🇳' },
   { value: 'kn', label: 'Kannada', flag: '🇮🇳' },
+  { value: 'ta', label: 'Tamil', flag: '🇮🇳' },
+  { value: 'ml', label: 'Malayalam', flag: '🇮🇳' },
 ]
 
 /**
