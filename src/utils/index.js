@@ -160,6 +160,7 @@ export const LANGUAGES = [
   { value: 'te', label: 'Telugu',  flag: '🇮🇳' },
   { value: 'en', label: 'English', flag: '🇬🇧' },
   { value: 'hi', label: 'Hindi',   flag: '🇮🇳' },
+  { value: 'kn', label: 'Kannada', flag: '🇮🇳' },
 ]
 
 /**
