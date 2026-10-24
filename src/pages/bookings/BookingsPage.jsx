@@ -117,7 +117,8 @@ function BookingDetailModal({ booking, open, onClose }) {
   const otpMutation = useMutation({
     mutationFn: ({ id, otp }) => bookingsApi.verifyOtp(id, { otp }),
     onSuccess: () => { toast.success('Contact unlocked!'); qc.invalidateQueries(['bookings']); onClose() },
-    onError:   () => toast.error('Invalid OTP'),
+    // Show the backend's reason (invalid / expired / already used / too many attempts) — not always "Invalid OTP"
+    onError:   e => toast.error(e.response?.data?.error || 'Could not verify the OTP. Please try again.'),
   })
 
   // [GUARD]: Render nothing if no booking is selected

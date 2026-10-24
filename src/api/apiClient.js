@@ -21,6 +21,7 @@
 // IMPORTS & DEPENDENCIES
 // ─────────────────────────────────────────
 import axios from 'axios'
+import { approvalErrorOf } from '../utils/approval'
 import { useAuthStore } from '../store/authStore'
 
 // ─────────────────────────────────────────
@@ -50,6 +51,8 @@ apiClient.interceptors.request.use((config) => {
 })
 
 // [AUTH]: Handle 401 globally — force logout and redirect to login page
+// [AUTH]: Handle 403 APPROVAL_PENDING / APPROVAL_REJECTED — record the account's real approval status so the route
+// guards move the user to onboarding or the application-status screen (no hard redirect, so no redirect loop)
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -57,6 +60,11 @@ apiClient.interceptors.response.use(
       // [GUARD]: Token expired or invalid — clear auth state and redirect
       useAuthStore.getState().logout()
       window.location.href = '/login'
+    }
+    const approval = approvalErrorOf(err)
+    if (approval?.approvalStatus) {
+      const { business, updateBusiness } = useAuthStore.getState()
+      if (business && business.approvalStatus !== approval.approvalStatus) updateBusiness({ approvalStatus: approval.approvalStatus })
     }
     return Promise.reject(err)
   }

@@ -243,7 +243,7 @@ export default function SignupPage() {
       const { token, business } = res.data
       // [STATE]: Store auth token and business profile in Zustand
       setAuth(token, business)
-      toast.success('Account created! Let\'s set up your bot 🚀')
+      toast.success('Account created! Complete your setup to send your application for review 🚀')
       navigate('/onboarding')
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.')

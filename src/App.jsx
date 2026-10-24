@@ -41,6 +41,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { authApi } from './api/auth.api'
 import { PageLoader } from './components/ui/index'
+import { homePathFor, isUnderReviewOrRejected, STATUS_PATH } from './utils/approval'
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage'
@@ -48,6 +49,9 @@ import SignupPage from './pages/auth/SignupPage'
 
 // Onboarding wizard
 import OnboardingPage from './pages/onboarding/OnboardingPage'
+
+// Signup application status (under review / not approved)
+import ApplicationStatusPage from './pages/auth/ApplicationStatusPage'
 
 // Dashboard pages
 import DashboardPage from './pages/dashboard/DashboardPage'
@@ -82,8 +86,8 @@ function RequireAuth({ children }) {
   const { isAuthenticated, business } = useAuthStore()
   // [GUARD]: Block unauthenticated access — redirect to login
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  // [GUARD]: If authenticated but not onboarded → redirect to onboarding
-  if (business && !business.setupCompleted) return <Navigate to="/onboarding" replace />
+  // [GUARD]: Not approved yet / not onboarded → the screen this account belongs on (the API refuses it anyway)
+  if (business && homePathFor(business) !== '/dashboard') return <Navigate to={homePathFor(business)} replace />
   return children
 }
 
@@ -97,9 +101,8 @@ function RequireNoAuth({ children }) {
   const { isAuthenticated, business } = useAuthStore()
   // [GUARD]: Allow unauthenticated users through
   if (!isAuthenticated) return children
-  // [GUARD]: Redirect to onboarding if setup incomplete, otherwise to dashboard
-  if (!business?.setupCompleted) return <Navigate to="/onboarding" replace />
-  return <Navigate to="/dashboard" replace />
+  // [GUARD]: Send authenticated users to the screen their account belongs on
+  return <Navigate to={homePathFor(business)} replace />
 }
 
 /**
@@ -112,8 +115,21 @@ function RequireOnboarding({ children }) {
   const { isAuthenticated, business } = useAuthStore()
   // [GUARD]: Unauthenticated users cannot access onboarding
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  // [GUARD]: Already setup businesses go straight to dashboard
-  if (business?.setupCompleted) return <Navigate to="/dashboard" replace />
+  // [GUARD]: Submitted / reviewed applications and already setup businesses go where they belong
+  if (homePathFor(business) !== '/onboarding') return <Navigate to={homePathFor(business)} replace />
+  return children
+}
+
+/**
+ * @function    RequireApplicationStatus
+ * @purpose     Route guard for the application-status page — only for applications under review or not approved
+ * @param  {object} props.children - Child route element to render when guard passes
+ * @returns {JSX.Element} Children, or a Navigate redirect
+ */
+function RequireApplicationStatus({ children }) {
+  const { isAuthenticated, business } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (!isUnderReviewOrRejected(business)) return <Navigate to={homePathFor(business)} replace />
   return children
 }
 
@@ -127,7 +143,7 @@ function RequireOnboarding({ children }) {
  * @returns {JSX.Element} Full application router tree
  */
 export default function App() {
-  const { isAuthenticated, token, updateBusiness } = useAuthStore()
+  const { isAuthenticated, token, business, updateBusiness } = useAuthStore()
   const [loading, setLoading] = React.useState(true)
 
   // [AUTH]: Refresh business profile on app load to ensure state is current
@@ -156,6 +172,9 @@ export default function App() {
         {/* [ROUTE]: Onboarding (auth'd but not setup) */}
         <Route path="/onboarding" element={<RequireOnboarding><OnboardingPage /></RequireOnboarding>} />
 
+        {/* [ROUTE]: Signup application under review / not approved */}
+        <Route path={STATUS_PATH} element={<RequireApplicationStatus><ApplicationStatusPage /></RequireApplicationStatus>} />
+
         {/* [ROUTE]: Protected dashboard */}
         <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
         <Route path="/bookings" element={<RequireAuth><BookingsPage /></RequireAuth>} />
@@ -175,7 +194,7 @@ export default function App() {
         <Route path="/business-twin" element={<RequireAuth><BusinessTwinPage /></RequireAuth>} />
         <Route path="/ceo-report"    element={<RequireAuth><CeoReportPage   /></RequireAuth>} />
         {/* [ROUTE]: Fallback */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? homePathFor(business) : '/login'} replace />} />
       </Routes>
     </BrowserRouter>
   )

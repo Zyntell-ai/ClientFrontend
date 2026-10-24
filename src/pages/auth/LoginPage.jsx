@@ -51,6 +51,7 @@ import toast from 'react-hot-toast'
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth.api'
+import { homePathFor } from '../../utils/approval'
 import { Button, Input, Alert } from '../../components/ui/index'
 import { Zap, ArrowRight, Eye, EyeOff, BarChart2, Target, Bot } from 'lucide-react'
 
@@ -383,9 +384,9 @@ export default function LoginPage() {
       // [STATE]: Persist token and business profile to Zustand auth store
       setAuth(token, business)
       toast.success(`Welcome back, ${business.name}!`)
-      // [BUSINESS RULE]: Redirect to onboarding if setup is not yet completed
-      if (!business.setupCompleted) navigate('/onboarding')
-      else navigate('/dashboard')
+      // [BUSINESS RULE]: Unfinished setup → onboarding; application under review / not approved → its status
+      // screen; otherwise the dashboard
+      navigate(homePathFor(business))
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.')
     }

@@ -44,6 +44,8 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { onboardingApi, businessApi } from '../../api/index'
+import { authApi } from '../../api/auth.api'
+import { homePathFor, approvalErrorOf, APPROVAL } from '../../utils/approval'
 import { Button, Input, Select, Toggle, Alert, Spinner } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS, CATEGORY_LABELS } from '../../utils/index'
 import { categoryDisplayLabel } from '../../utils/customCategory'
@@ -244,11 +246,27 @@ export default function OnboardingPage() {
       }
       // [API CALL]: Submit complete onboarding payload
       const res = await onboardingApi.complete(payload)
-      // [STATE]: Mark setup as completed in global auth store
-      updateBusiness({ setupCompleted: true, botTrainingScore: res.data.botTrainingScore })
-      toast.success('🎉 Bot is ready! Welcome to Zyntell.')
-      navigate('/dashboard')
+      // [STATE]: Mark setup as completed in global auth store (a new signup is now submitted for review)
+      const updates = {
+        setupCompleted: true,
+        botTrainingScore: res.data.botTrainingScore,
+        ...(res.data.approvalStatus ? { approvalStatus: res.data.approvalStatus } : {}),
+      }
+      updateBusiness(updates)
+      toast.success(res.data.approvalStatus === APPROVAL.PENDING_REVIEW
+        ? 'Setup complete! Your application has been sent for review.'
+        : '🎉 Bot is ready! Welcome to Zyntell.')
+      navigate(homePathFor({ ...business, ...updates }))
     } catch (err) {
+      // [GUARD]: Already submitted (e.g. another tab) or no longer allowed — show the screen this account belongs on
+      if (err.response?.data?.code === 'ONBOARDING_ALREADY_COMPLETED' || approvalErrorOf(err)) {
+        try {
+          const me = await authApi.me()
+          updateBusiness(me.data.business)
+          navigate(homePathFor(me.data.business))
+          return
+        } catch { /* fall through to the error message */ }
+      }
       setError(err.response?.data?.error || 'Setup failed. Please try again.')
     } finally {
       setLoading(false)
