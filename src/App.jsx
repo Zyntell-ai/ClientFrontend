@@ -65,6 +65,7 @@ import BusinessDetail from './pages/customers/BusinessDetail'
 import LeadsPage from './pages/leads/LeadsPage'
 import AnalyticsPage from './pages/analytics/AnalyticsPage'
 import InsightsPage from './pages/insights/InsightsPage'
+import CallsPage from './pages/calls/CallsPage'
 import BillingPage from './pages/billing/BillingPage'
 import CommissionsPage from './pages/commissions/CommissionsPage'
 import NumbersPage from './pages/numbers/NumbersPage'
@@ -188,6 +189,7 @@ export default function App() {
         <Route path="/leads" element={<RequireAuth><LeadsPage /></RequireAuth>} />
         <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
         <Route path="/insights" element={<RequireAuth><InsightsPage /></RequireAuth>} />
+        <Route path="/calls" element={<RequireAuth><CallsPage /></RequireAuth>} />
         <Route path="/billing" element={<RequireAuth><BillingPage /></RequireAuth>} />
         <Route path="/commissions" element={<RequireAuth><CommissionsPage /></RequireAuth>} />
         <Route path="/numbers" element={<RequireAuth><NumbersPage /></RequireAuth>} />

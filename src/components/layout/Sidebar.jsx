@@ -45,7 +45,7 @@ import { getTheme } from '../../utils/categoryTheme'
 import { CATEGORY_ICONS } from '../../utils/index'
 import { format } from 'date-fns'
 import clsx from 'clsx'
-import { LayoutDashboard, Calendar, Users, Briefcase, UserCheck, BarChart3, Receipt, DollarSign, Phone, Settings, LogOut, Target, Bot, Lock, Building2, Newspaper, BookOpen, Lightbulb } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Briefcase, UserCheck, BarChart3, Receipt, DollarSign, Phone, Settings, LogOut, Target, Bot, Lock, Building2, Newspaper, BookOpen, Lightbulb, PhoneCall } from 'lucide-react'
 import { confirmLeaveWithUnsavedChanges } from '../../utils/unsavedChanges'
 import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 
@@ -75,6 +75,8 @@ const NAV = [
     section: 'OPERATIONS', items: [
       { to: '/bookings', icon: Calendar, label: 'Bookings' },
       { to: '/customers', icon: Users, label: 'Customers' },
+      // Call management (Phase 4) — this business's Exotel calls + its virtual number (no recordings)
+      { to: '/calls', icon: PhoneCall, label: 'Calls' },
       { to: '/leads', icon: Target, label: 'Leads', badge: 'NEW' },
     ]
   },

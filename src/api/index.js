@@ -31,6 +31,7 @@
 export { authApi } from './auth.api'
 export { categoriesApi } from './categories.api'
 export { insightsApi } from './insights.api'
+export { callsApi } from './calls.api'
 export { onboardingApi } from './onboarding.api'
 export { businessApi } from './business.api'
 export { bookingsApi } from './bookings.api'
