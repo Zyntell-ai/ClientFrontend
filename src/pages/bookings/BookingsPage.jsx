@@ -47,9 +47,9 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Button, Badge, Modal, Input, Select, Tabs, EmptyState, Spinner, Avatar, Alert, FeatureGate } from '../../components/ui/index'
+import { Button, Badge, Modal, Input, Select, Tabs, EmptyState, Spinner, Avatar, Alert } from '../../components/ui/index'
 import TimeRiver from '../../components/ui/TimeRiver'
-import { fmt, BOOKING_STATUS_COLORS, toDate } from '../../utils/index'
+import { fmt, BOOKING_STATUS_COLORS, toDate, displayBookingStatus } from '../../utils/index'
 import { Calendar, CheckCircle2, XCircle, KeyRound, List, Waves } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -65,7 +65,7 @@ const STATUS_TABS = [
   { value: 'CONFIRMED', label: 'Confirmed' },
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'NO_SHOW',   label: 'No Show'   },
+  { value: 'NO_SHOW',   label: 'No Show'   }, // historical bookings only — no longer set
 ]
 
 // [UI]: Tab definitions for switching between Time River and List views
@@ -96,13 +96,13 @@ function statusStyle(status) {
 
 /**
  * @function    BookingDetailModal
- * @purpose     Modal that displays full booking details, allows OTP-based contact unlock, and exposes status-change actions (confirm, complete, cancel)
+ * @purpose     Modal that displays full booking details, the OTP check-in (every plan) and status-change actions (confirm, complete, cancel)
  * @param  {{ booking: object, open: boolean, onClose: Function }} props
  * @returns {JSX.Element|null}
  */
 function BookingDetailModal({ booking, open, onClose }) {
   const qc = useQueryClient()
-  // [STATE]: OTP input value for contact unlock
+  // [STATE]: OTP the customer tells the business at check-in
   const [otp, setOtp]           = useState('')
   // [STATE]: Optional cancellation reason captured via browser prompt
   const [cancelReason, setReason] = useState('')
@@ -113,17 +113,20 @@ function BookingDetailModal({ booking, open, onClose }) {
     onSuccess: () => { toast.success('Booking updated'); qc.invalidateQueries(['bookings']); onClose() },
     onError:   e => toast.error(e.response?.data?.error || 'Update failed'),
   })
-  // [API CALL]: POST OTP to unlock customer contact details
+  // [API CALL]: POST the OTP — check-in confirms the booking (verified server-side for this business only)
   const otpMutation = useMutation({
     mutationFn: ({ id, otp }) => bookingsApi.verifyOtp(id, { otp }),
-    onSuccess: () => { toast.success('Contact unlocked!'); qc.invalidateQueries(['bookings']); onClose() },
+    onSuccess: () => { toast.success('Customer checked in'); setOtp(''); qc.invalidateQueries(['bookings']); onClose() },
     // Show the backend's reason (invalid / expired / already used / too many attempts) — not always "Invalid OTP"
     onError:   e => toast.error(e.response?.data?.error || 'Could not verify the OTP. Please try again.'),
   })
 
   // [GUARD]: Render nothing if no booking is selected
   if (!booking) return null
-  const ss = statusStyle(booking.status)
+  const status = displayBookingStatus(booking.status)
+  const ss = statusStyle(status)
+  // [BUSINESS RULE]: OTP check-in for active bookings whose code has not been used yet (every plan)
+  const canCheckIn = !booking.otpUsed && ['PENDING', 'CONFIRMED'].includes(status)
 
   return (
     <Modal open={open} onClose={onClose} title="Booking Details" size="lg">
@@ -132,7 +135,7 @@ function BookingDetailModal({ booking, open, onClose }) {
         <div className="grid grid-cols-2 gap-3">
           {[
             ['Customer',  booking.customerName],
-            ['Phone',     booking.contactUnlocked ? booking.customerPhone : '••• ••• ••••'],
+            ['Phone',     booking.customerPhone || '—'],
             ['Service',   booking.serviceName],
             ['Staff',     booking.staffName || 'Any'],
             ['Scheduled', fmt.datetime(booking.scheduledAt)],
@@ -151,33 +154,33 @@ function BookingDetailModal({ booking, open, onClose }) {
             className="text-xs px-3 py-1 rounded-full font-semibold"
             style={{ background: ss.bg, color: ss.text, border: `0.5px solid ${ss.border}` }}
           >
-            {booking.status}
+            {status}
           </span>
           {booking.cancelReason && (
             <p className="text-xs" style={{ color: 'var(--mp-text)', opacity: 0.5 }}>Reason: {booking.cancelReason}</p>
           )}
         </div>
 
-        {/* OTP unlock — gated to Growth/Pro (showupVerification) */}
-        <FeatureGate feature="showupVerification">
-          {/* [BUSINESS RULE]: Contact details are masked until the OTP is verified */}
-          {!booking.contactUnlocked && (
-            <Alert type="info">Enter the 4-digit OTP to unlock this customer's contact details</Alert>
-          )}
-          {!booking.contactUnlocked && (
+        {/* OTP check-in — available on every plan */}
+        {canCheckIn && (
+          <>
+            <Alert type="info">When the customer arrives, enter the 4-digit check-in OTP they show you</Alert>
             <div className="flex gap-2">
-              <Input placeholder="4-digit OTP" value={otp} onChange={e => setOtp(e.target.value)} maxLength={4} className="flex-1" />
+              <Input placeholder="4-digit OTP" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} maxLength={4} inputMode="numeric" className="flex-1" />
               <Button onClick={() => otpMutation.mutate({ id: booking.id, otp })} loading={otpMutation.isPending} disabled={otp.length !== 4}>
-                <KeyRound className="w-4 h-4" /> Unlock
+                <KeyRound className="w-4 h-4" /> Check in
               </Button>
             </div>
-          )}
-        </FeatureGate>
+          </>
+        )}
+        {booking.otpUsed && (
+          <p className="text-xs" style={{ color: 'var(--mp-text)', opacity: 0.6 }}>✓ Checked in with OTP</p>
+        )}
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 pt-2" style={{ borderTop: '0.5px solid var(--mp-card-border)' }}>
           {/* [BUSINESS RULE]: Confirm action only available for PENDING bookings */}
-          {booking.status === 'PENDING' && (
+          {status === 'PENDING' && (
             <Button
               onClick={() => statusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
               loading={statusMutation.isPending}
@@ -186,7 +189,7 @@ function BookingDetailModal({ booking, open, onClose }) {
             </Button>
           )}
           {/* [BUSINESS RULE]: Complete and Cancel actions only available for PENDING or CONFIRMED bookings */}
-          {['PENDING', 'CONFIRMED'].includes(booking.status) && (
+          {['PENDING', 'CONFIRMED'].includes(status) && (
             <>
               <Button
                 variant="secondary"
@@ -261,8 +264,8 @@ export default function BookingsPage() {
       title:    b.customerName,
       subtitle: b.serviceName,
       time:     b.scheduledAt,
-      status:   b.status,
-      badge:    b.status,
+      status:   displayBookingStatus(b.status),
+      badge:    displayBookingStatus(b.status),
     }))
 
   return (
@@ -327,7 +330,7 @@ export default function BookingsPage() {
                 </thead>
                 <tbody>
                   {bookings.map(b => {
-                    const ss = statusStyle(b.status)
+                    const ss = statusStyle(displayBookingStatus(b.status))
                     return (
                       <tr key={b.id} className="mp-tr">
                         <td className="mp-td">
@@ -346,7 +349,7 @@ export default function BookingsPage() {
                             className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                             style={{ background: ss.bg, color: ss.text, border: `0.5px solid ${ss.border}` }}
                           >
-                            {b.status}
+                            {displayBookingStatus(b.status)}
                           </span>
                         </td>
                         <td className="mp-td">

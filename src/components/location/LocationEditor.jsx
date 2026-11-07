@@ -255,7 +255,7 @@ export default function LocationEditor() {
         <Button className="w-full" loading={saveMutation.isPending} onClick={save}>
           <CheckCircle2 className="w-4 h-4" /> Save Location
         </Button>
-        <p className="text-[11px] text-slate-400">Used to verify customer check-ins and shown to customers. We store only your business location — never your personal location.</p>
+        <p className="text-[11px] text-slate-400">Shown to customers. We store only your business location — never your personal location.</p>
       </div>
     </Card>
   )

@@ -47,7 +47,7 @@ import { useQuery } from '@tanstack/react-query'
 import { bookingsApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Spinner, Badge } from '../../components/ui/index'
-import { fmt, BOOKING_STATUS_COLORS } from '../../utils/index'
+import { fmt, BOOKING_STATUS_COLORS, displayBookingStatus } from '../../utils/index'
 import { ChevronLeft, ChevronRight, List } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
@@ -199,7 +199,7 @@ export default function CalendarPage() {
                       <div className="mt-1 space-y-0.5">
                         {dayBookings.slice(0, 3).map((b, i) => (
                           <div key={i} className="flex items-center gap-1">
-                            <div className={clsx('w-1.5 h-1.5 rounded-full shrink-0', STATUS_DOT[b.status] || 'bg-slate-400')} />
+                            <div className={clsx('w-1.5 h-1.5 rounded-full shrink-0', STATUS_DOT[displayBookingStatus(b.status)] || 'bg-slate-400')} />
                             <span className="text-[9px] text-slate-500 truncate">{b.customerName?.split(' ')[0]}</span>
                           </div>
                         ))}
@@ -251,7 +251,7 @@ export default function CalendarPage() {
                   return aTime - bTime
                 })
                 .map((b) => (
-                  <div key={b.id} className={clsx('p-3 rounded-lg border transition-all', BOOKING_STATUS_COLORS[b.status]?.includes('blue') ? 'border-blue-500/20 bg-blue-500/5' : 'border-navy-400/20 bg-navy-700/30')}>
+                  <div key={b.id} className={clsx('p-3 rounded-lg border transition-all', BOOKING_STATUS_COLORS[displayBookingStatus(b.status)]?.includes('blue') ? 'border-blue-500/20 bg-blue-500/5' : 'border-navy-400/20 bg-navy-700/30')}>
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-sm font-semibold text-slate-200">{b.customerName}</p>
@@ -260,8 +260,8 @@ export default function CalendarPage() {
                       <p className="text-xs font-bold text-brand-blue">{fmt.time(b.scheduledAt?.toDate ? b.scheduledAt.toDate() : b.scheduledAt)}</p>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className={clsx('text-[10px] px-1.5 py-0.5 rounded-full border font-semibold', BOOKING_STATUS_COLORS[b.status])}>
-                        {b.status}
+                      <span className={clsx('text-[10px] px-1.5 py-0.5 rounded-full border font-semibold', BOOKING_STATUS_COLORS[displayBookingStatus(b.status)])}>
+                        {displayBookingStatus(b.status)}
                       </span>
                       {b.staffName && <span className="text-[10px] text-slate-600">{b.staffName}</span>}
                     </div>

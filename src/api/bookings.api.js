@@ -3,7 +3,7 @@
  * @module      Bookings API
  * @project     ClientFrontend
  * @layer       API
- * @description API functions for booking management — listing, calendar view, slot availability, status updates, OTP verification, and attendance marking.
+ * @description API functions for booking management — listing, calendar view, slot availability, status updates and OTP check-in.
  *
  * @updated     2026-05-29
  * @version     1.0.0
@@ -14,7 +14,7 @@
  * @sideEffects
  *   - HTTP GET requests to /api/bookings, /api/bookings/view/calendar, /api/bookings/slots, /api/bookings/:id
  *   - HTTP PUT request to /api/bookings/:id/status
- *   - HTTP POST requests to /api/bookings/:id/verify-otp, /api/bookings/:id/mark-attended
+ *   - HTTP POST request to /api/bookings/:id/verify-otp (OTP check-in)
  */
 
 // ─────────────────────────────────────────
@@ -84,7 +84,7 @@ export const bookingsApi = {
 
   /**
    * @function    verifyOtp
-   * @purpose     Verify customer OTP for a booking confirmation
+   * @purpose     OTP check-in: verify the code the customer tells the business (confirms the booking)
    * @param  {string} id - Booking document ID
    * @param  {object} d - OTP payload (otp)
    * @returns {Promise<AxiosResponse>} API response
@@ -92,14 +92,6 @@ export const bookingsApi = {
   // [API CALL]: Verify customer OTP for booking
   verifyOtp: (id, d) => apiClient.post(`/api/bookings/${id}/verify-otp`, d),
 
-  /**
-   * @function    markAttended
-   * @purpose     Mark a customer as attended for a completed appointment
-   * @param  {string} id - Booking document ID
-   * @returns {Promise<AxiosResponse>} API response
-   */
-  // [API CALL]: Record customer attendance for the booking
-  markAttended: (id) => apiClient.post(`/api/bookings/${id}/mark-attended`),
 }
 
 // ─────────────────────────────────────────

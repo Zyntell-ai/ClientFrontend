@@ -154,7 +154,7 @@ export default function CommissionsPage() {
   }
 
   return (
-    <DashboardLayout title="Commissions" subtitle="Zyntell charges 10% of the service price for each completed booking made through Zyntell">
+    <DashboardLayout title="Commissions" subtitle="Your commission history. Completed bookings are no longer charged a commission — earlier charges stay here and can still be disputed.">
       {/* [UI]: Summary stat cards row — field names match the real /api/commissions/summary response shape */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <StatCard

@@ -112,6 +112,15 @@ export const BOOKING_STATUS_COLORS = {
 }
 
 /**
+ * @function    displayBookingStatus
+ * @purpose     Safety net for legacy statuses: the backend already sends EN_ROUTE / ARRIVED (the removed customer
+ *              "On my way" / "I've arrived" steps) as CONFIRMED; any that still arrive are shown as CONFIRMED too.
+ * @param  {string} status - Booking status from the API
+ * @returns {string}
+ */
+export const displayBookingStatus = (status) => (status === 'EN_ROUTE' || status === 'ARRIVED' ? 'CONFIRMED' : status)
+
+/**
  * @constant    LEAD_QUALITY_CONFIG
  * @purpose     Display config for lead quality tiers — Tailwind color class and human-readable label
  */

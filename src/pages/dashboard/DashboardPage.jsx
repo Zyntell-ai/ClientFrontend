@@ -50,7 +50,7 @@ import { useAuthStore } from '../../store/authStore'
 import { businessApi, onboardingApi } from '../../api/index'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { StatCard, Card, Spinner, EmptyState, Avatar, Alert, Badge } from '../../components/ui/index'
-import { fmt, BOOKING_STATUS_COLORS, LEAD_QUALITY_CONFIG, CATEGORY_ICONS } from '../../utils/index'
+import { fmt, BOOKING_STATUS_COLORS, LEAD_QUALITY_CONFIG, CATEGORY_ICONS, displayBookingStatus } from '../../utils/index'
 import { Calendar, Users, DollarSign, Clock, Target, TrendingUp, ArrowRight, AlertCircle, PhoneOff, Mic } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             sub="in commissions"
             focusState={stateOf(3)}
             onClick={() => toggle(3)}
-            detail={`Booking commissions + show-up bonuses. Invoice due on 1st of next month.`}
+            detail={`Commissions recorded this month. New bookings are no longer charged a booking or show-up commission — earlier charges stay on your invoices.`}
           />
         </div>
       )}
@@ -344,7 +344,7 @@ export default function DashboardPage() {
                   PENDING:   { bg: 'rgba(217,119,6,0.08)',  text: '#d97706', border: 'rgba(217,119,6,0.20)'  },
                   COMPLETED: { bg: 'rgba(100,116,139,0.08)',text: '#64748b', border: 'rgba(100,116,139,0.20)' },
                   CANCELLED: { bg: 'rgba(220,38,38,0.08)',  text: '#dc2626', border: 'rgba(220,38,38,0.20)'  },
-                }[b.status] || { bg: 'var(--mp-a05)', text: 'var(--mp-text)', border: 'var(--mp-card-border)' }
+                }[displayBookingStatus(b.status)] || { bg: 'var(--mp-a05)', text: 'var(--mp-text)', border: 'var(--mp-card-border)' }
                 return (
                   <div
                     key={b.id}
@@ -362,7 +362,7 @@ export default function DashboardPage() {
                       className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                       style={{ background: statusStyle.bg, color: statusStyle.text, border: `0.5px solid ${statusStyle.border}` }}
                     >
-                      {b.status}
+                      {displayBookingStatus(b.status)}
                     </span>
                   </div>
                 )

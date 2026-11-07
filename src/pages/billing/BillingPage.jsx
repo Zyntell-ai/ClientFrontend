@@ -69,7 +69,7 @@ const FEATURE_LABELS = {
   missedCallToWhatsApp: 'Missed Call → WhatsApp',
   aiVoiceAgent:         'AI Voice Call Agent',
   leadQualification:    'Lead Qualification',
-  showupVerification:   'Show-up Verification',
+  showupVerification:   'OTP Check-in',
   analyticsDashboard:   'Analytics Dashboard',
   multilingualSupport:  'Telugu + Hindi + English',
   leadAuctionAccess:    'Lead Auction Access',

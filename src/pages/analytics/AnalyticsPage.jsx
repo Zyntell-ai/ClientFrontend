@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={<BarChart3 className="w-5 h-5" />} label="Total Bookings" value={bookingData?.total ?? '—'} color="blue" />
-        <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Showup Rate" value={bookingData ? fmt.percent(bookingData.showupRate) : '—'} color="green" />
+        <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Completion Rate" value={bookingData ? fmt.percent(bookingData.completionRate ?? bookingData.showupRate) : '—'} sub="Completed out of all bookings" color="green" />
         <StatCard icon={<Users className="w-5 h-5" />} label="Return Rate" value={customerData ? fmt.percent(customerData.returnRate) : '—'} sub={`Avg ${customerData?.avgVisitsPerCustomer ?? '—'} visits/customer`} color="purple" />
         <StatCard icon={<DollarSign className="w-5 h-5" />} label="ROI Multiple" value={revenueData?.roiData ? `${revenueData.roiData.roiMultiple}x` : '—'} sub="revenue vs cost" color="amber" />
       </div>
