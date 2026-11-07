@@ -46,7 +46,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Button, Input, Select, Textarea, Toggle, Modal, Alert, Card, EmptyState, Spinner, FeatureGate } from '../../components/ui/index'
 import { BOT_PERSONAS, BOT_TONES, LANGUAGES, DAY_LABELS, CATEGORY_ICONS } from '../../utils/index'
 import { hoursSaveErrorMessage } from '../../utils/workingHours'
-import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin, Phone, UserCircle } from 'lucide-react'
+import { Bot, Clock, MessageSquare, Bell, Trash2, Plus, Save, MapPin, Phone, UserCircle, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import LocationEditor from '../../components/location/LocationEditor'
@@ -61,6 +61,7 @@ const TABS = [
   { id: 'faqs',          label: 'FAQs / Training', icon: MessageSquare },
   { id: 'notifications', label: 'Notifications',   icon: Bell          },
   { id: 'voice',         label: 'AI Voice',        icon: Phone         },
+  { id: 'safety',        label: 'Safety',          icon: ShieldCheck   },
   { id: 'location',      label: 'Location',        icon: MapPin        },
   { id: 'account',       label: 'Account',         icon: UserCircle    },
 ]
@@ -443,6 +444,102 @@ function NotificationsTab({ settings, onSave, saving }) {
   )
 }
 
+// ─── Safety Tab (Phase 2) ────────────────────────────────────
+
+/**
+ * @function    SafetyTab
+ * @purpose     Optional emergency contact (shown to the AI only when set — never invented) and the business's healthcare
+ *              classification. Zyntell sets the classification; the owner can only REQUEST a change, which an admin reviews.
+ */
+function SafetyTab({ settings }) {
+  const qc = useQueryClient()
+  const stored = settings?.emergencyContact || null
+  const [contact, setContact] = useState({ name: '', phone: '', note: '' })
+  useEffect(() => { setContact({ name: stored?.name || '', phone: stored?.phone || '', note: stored?.note || '' }) }, [stored?.name, stored?.phone, stored?.note])
+
+  // Only the emergencyContact field is sent — nothing else in the settings is touched
+  const contactMutation = useMutation({
+    mutationFn: (emergencyContact) => businessApi.updateSettings({ emergencyContact }),
+    onSuccess: (_r, value) => { toast.success(value ? 'Emergency contact saved' : 'Emergency contact removed'); qc.invalidateQueries(['settings']) },
+    onError: (e) => toast.error(e.response?.data?.error || e.response?.data?.details?.[0]?.message || 'Could not save the emergency contact'),
+  })
+
+  const { data: classification, isLoading: classLoading, isError: classError } = useQuery({
+    queryKey: ['healthcare-classification'],
+    queryFn: businessApi.getHealthcareClassification,
+    select: (r) => r.data,
+  })
+  const [requested, setRequested] = useState('')
+  const [reason, setReason] = useState('')
+  const requestMutation = useMutation({
+    mutationFn: () => businessApi.requestHealthcareClassification({ isHealthcare: requested === 'yes', reason: reason.trim() }),
+    onSuccess: () => { toast.success('Request sent to Zyntell for review'); setReason(''); setRequested(''); qc.invalidateQueries(['healthcare-classification']) },
+    onError: (e) => toast.error(e.response?.data?.error || 'Could not send the request'),
+  })
+
+  const current = classification?.isHealthcare
+  const currentLabel = current === true ? 'Healthcare provider' : current === false ? 'Not a healthcare provider' : 'Not classified yet'
+  const pending = classification?.request?.status === 'PENDING'
+  const lastDecision = classification?.request && classification.request.status !== 'PENDING' ? classification.request : null
+
+  return (
+    <div className="space-y-5">
+      <Card title="Emergency Contact (optional)">
+        <p className="text-xs text-slate-500 mb-4">
+          If set, your AI receptionist can give this number to a customer who describes an urgent situation — always after
+          telling them to contact local emergency services. It is kept separate from your normal contact number. If you leave
+          it empty, the AI never makes one up. Zyntell does not call or alert anyone automatically.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input label="Name / label" placeholder="e.g. Doctor on call" value={contact.name} maxLength={60} onChange={(e) => setContact((c) => ({ ...c, name: e.target.value }))} />
+          <Input label="Phone number" placeholder="+91XXXXXXXXXX" value={contact.phone} onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))} />
+        </div>
+        <Input className="mt-3" label="Note (optional)" placeholder="e.g. Available 24/7" value={contact.note} maxLength={200} onChange={(e) => setContact((c) => ({ ...c, note: e.target.value }))} />
+        <div className="flex gap-2 mt-4 flex-wrap">
+          <Button loading={contactMutation.isPending} disabled={!contact.name.trim() || !contact.phone.trim()}
+            onClick={() => contactMutation.mutate({ name: contact.name.trim(), phone: contact.phone.trim(), note: contact.note.trim() || null })}>
+            <Save className="w-4 h-4" /> Save emergency contact
+          </Button>
+          {stored && <Button variant="secondary" loading={contactMutation.isPending} onClick={() => contactMutation.mutate(null)}>Remove</Button>}
+        </div>
+      </Card>
+
+      <Card title="Healthcare Classification">
+        {classLoading ? <Spinner /> : classError ? <Alert type="error">The classification could not be loaded.</Alert> : (
+          <>
+            <p className="text-sm mb-1" style={{ color: 'var(--mp-text)' }}>Current: <strong>{currentLabel}</strong></p>
+            <p className="text-xs text-slate-500 mb-4">
+              Set by Zyntell during approval. Healthcare providers get stricter AI safety rules on calls and WhatsApp: the AI never
+              diagnoses, prescribes, gives doses or treatment advice — it answers administrative questions and helps book.
+            </p>
+            {pending ? (
+              <Alert type="info">Your request to change this to “{classification.request.requestedValue ? 'Healthcare provider' : 'Not a healthcare provider'}” is waiting for Zyntell's review.</Alert>
+            ) : (
+              <div className="space-y-3">
+                {lastDecision && (
+                  <Alert type={lastDecision.status === 'APPROVED' ? 'success' : 'warning'}>
+                    Your last request was {lastDecision.status === 'APPROVED' ? 'approved' : 'not approved'}{lastDecision.decisionNote ? `: ${lastDecision.decisionNote}` : '.'}
+                  </Alert>
+                )}
+                <Select label="Request a change to" value={requested} onChange={(e) => setRequested(e.target.value)}>
+                  <option value="">Choose…</option>
+                  {current !== true && <option value="yes">Healthcare provider</option>}
+                  {current !== false && <option value="no">Not a healthcare provider</option>}
+                </Select>
+                <Textarea label="Reason" placeholder="Tell Zyntell why the classification should change" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
+                <Button loading={requestMutation.isPending} disabled={!requested || reason.trim().length < 3} onClick={() => requestMutation.mutate()}>
+                  Send request for review
+                </Button>
+                <p className="text-[11px] text-slate-400">A request does not change anything until Zyntell approves it.</p>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+    </div>
+  )
+}
+
 // ─── AI Voice Tab ────────────────────────────────────────────
 
 /**
@@ -591,6 +688,7 @@ export default function SettingsPage() {
               {activeTab === 'faqs'          && <FaqsTab />}
               {activeTab === 'notifications' && <NotificationsTab settings={settings} onSave={updateMutation.mutate} saving={updateMutation.isPending} />}
               {activeTab === 'voice'         && <VoiceAITab       settings={settings} onSave={updateMutation.mutate} saving={updateMutation.isPending} />}
+              {activeTab === 'safety'        && <SafetyTab        settings={settings} />}
               {activeTab === 'location'      && <LocationEditor />}
               {activeTab === 'account'       && <AccountSettings />}
             </>

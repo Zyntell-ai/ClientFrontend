@@ -45,11 +45,7 @@ import { getTheme } from '../../utils/categoryTheme'
 import { CATEGORY_ICONS } from '../../utils/index'
 import { format } from 'date-fns'
 import clsx from 'clsx'
-import {
-  LayoutDashboard, Calendar, Users, Briefcase, UserCheck,
-  BarChart3, Receipt, DollarSign, Phone, Settings,
-  LogOut, Target, Bot, Lock, Building2, Newspaper, BookOpen
-} from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Briefcase, UserCheck, BarChart3, Receipt, DollarSign, Phone, Settings, LogOut, Target, Bot, Lock, Building2, Newspaper, BookOpen, Lightbulb } from 'lucide-react'
 import { confirmLeaveWithUnsavedChanges } from '../../utils/unsavedChanges'
 import { usePlanFeatures } from '../../hooks/usePlanFeatures'
 
@@ -67,6 +63,8 @@ const NAV = [
       { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
       // [BUSINESS RULE]: Analytics is locked for Trial/Starter — lock icon shown inline without removing the item
       { to: '/analytics',    icon: BarChart3,    label: 'Analytics',     lockedFeature: 'analyticsDashboard'   },
+      // Conversation Insights — every plan (questions customers asked the AI, last 30 days)
+      { to: '/insights',     icon: Lightbulb,    label: 'Conversation Insights' },
       // [BUSINESS RULE]: Business Twin is locked for Trial/Starter — Growth/Pro only
       { to: '/business-twin', icon: Building2,   label: 'Business Twin', lockedFeature: 'businessDigitalTwin' },
       // [BUSINESS RULE]: CEO Report is locked for Trial/Starter — Growth/Pro only

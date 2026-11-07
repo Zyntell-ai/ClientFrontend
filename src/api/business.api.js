@@ -133,6 +133,19 @@ export const businessApi = {
   getSettings: () => apiClient.get('/api/business/settings'),
 
   /**
+   * @function    getHealthcareClassification
+   * @purpose     The business's healthcare classification (set by Zyntell) and its latest change request
+   */
+  getHealthcareClassification: () => apiClient.get('/api/business/healthcare-classification'),
+
+  /**
+   * @function    requestHealthcareClassification
+   * @purpose     Ask Zyntell to change the classification — never changes it directly (an admin reviews it)
+   * @param  {{ isHealthcare: boolean, reason: string }} d
+   */
+  requestHealthcareClassification: (d) => apiClient.post('/api/business/healthcare-classification/request', d),
+
+  /**
    * @function    updateSettings
    * @purpose     Update business settings (bot persona, tone, language, etc.)
    * @param  {object} d - Settings payload
