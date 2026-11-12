@@ -51,6 +51,7 @@ import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import LocationEditor from '../../components/location/LocationEditor'
 import AccountSettings from '../../components/account/AccountSettings'
+import FaqsTab from './FaqsTab'
 
 // ─────────────────────────────────────────
 // CONSTANTS & CONFIG
@@ -282,104 +283,7 @@ function WorkingHoursTab() {
 }
 
 // ─── FAQs Tab ─────────────────────────────────────────────────
-
-/**
- * @function    FaqsTab
- * @purpose     Lists FAQ training entries and allows creating and deleting them to improve bot response quality.
- * @returns {JSX.Element}
- */
-function FaqsTab() {
-  const qc = useQueryClient()
-  // [STATE]: Add-FAQ modal visibility and new FAQ form fields
-  const [showAdd, setShowAdd] = useState(false)
-  const [newFaq, setNewFaq]   = useState({ question: '', answer: '', category: '' })
-
-  // [API CALL]: Fetch FAQ list
-  const { data, isLoading } = useQuery({
-    queryKey: ['faqs'],
-    queryFn: businessApi.getFaqs,
-    select: r => r.data.faqs,
-  })
-
-  // [API CALL]: Create a new FAQ entry
-  const createMutation = useMutation({
-    mutationFn: businessApi.createFaq,
-    onSuccess: () => {
-      toast.success('FAQ added — bot is now smarter!')
-      qc.invalidateQueries(['faqs'])
-      setShowAdd(false)
-      setNewFaq({ question: '', answer: '', category: '' })
-    },
-    onError: e => toast.error(e.response?.data?.error || 'Failed'),
-  })
-
-  // [API CALL]: Delete a FAQ entry by id
-  const deleteMutation = useMutation({
-    mutationFn: businessApi.deleteFaq,
-    onSuccess: () => { toast.success('FAQ removed'); qc.invalidateQueries(['faqs']) },
-  })
-
-  const faqs = data || []
-
-  return (
-    <div>
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-sm text-slate-600">Teach your bot common questions and answers.</p>
-          <p className="text-xs text-slate-400 mt-0.5">The more FAQs you add, the better your bot responds.</p>
-        </div>
-        <Button onClick={() => setShowAdd(true)} size="sm"><Plus className="w-3.5 h-3.5" /> Add FAQ</Button>
-      </div>
-
-      <Alert type="info" className="mb-5">
-        💡 Adding FAQs improves your Bot Training Score and reduces missed customer queries.
-      </Alert>
-
-      {isLoading ? (
-        <div className="flex justify-center py-8"><Spinner /></div>
-      ) : faqs.length === 0 ? (
-        <EmptyState icon="💬" title="No FAQs yet" description="Add questions and answers to train your bot"
-          action={<Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" /> Add First FAQ</Button>} />
-      ) : (
-        <div className="space-y-3">
-          {faqs.map((faq) => (
-            <div key={faq.id} className="glass-card p-4 group hover:border-violet-200 transition-all">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-[#1E1B4B] flex items-center gap-2">
-                    <span className="text-violet-600 text-base font-bold">Q</span>
-                    {faq.question}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-2 pl-5 leading-relaxed">{faq.answer}</p>
-                  {faq.category && (
-                    <span className="inline-block mt-2 text-[10px] bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded">
-                      {faq.category}
-                    </span>
-                  )}
-                </div>
-                <button onClick={() => deleteMutation.mutate(faq.id)}
-                  className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add FAQ">
-        <div className="space-y-3">
-          <Input label="Question *"          placeholder="e.g., What are your working hours?"  value={newFaq.question} onChange={e => setNewFaq(f => ({ ...f, question: e.target.value }))} />
-          <Textarea label="Answer *"         placeholder="e.g., We are open Mon–Fri 9AM–6PM..." value={newFaq.answer}   onChange={e => setNewFaq(f => ({ ...f, answer:   e.target.value }))} rows={4} />
-          <Input label="Category (optional)" placeholder="e.g., Pricing, Hours, Services"      value={newFaq.category} onChange={e => setNewFaq(f => ({ ...f, category: e.target.value }))} />
-          <Button className="w-full" loading={createMutation.isPending} onClick={() => createMutation.mutate(newFaq)}>
-            Add FAQ
-          </Button>
-        </div>
-      </Modal>
-    </div>
-  )
-}
+// Batch 2: add / edit / enable-disable / delete with approval, AI-usage and conflict status — see ./FaqsTab.jsx
 
 // ─── Notifications Tab ────────────────────────────────────────
 

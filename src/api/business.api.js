@@ -194,8 +194,14 @@ export const businessApi = {
    * @param  {string} id - FAQ document ID
    * @returns {Promise<AxiosResponse>} API response
    */
-  // [API CALL]: Delete an FAQ entry
+  // [API CALL]: Delete an FAQ entry (soft delete)
   deleteFaq: (id) => apiClient.delete(`/api/business/faqs/${id}`),
+
+  /** Edit an FAQ in place (question, answer, category) — same id, new version */
+  updateFaq: (id, d) => apiClient.put(`/api/business/faqs/${id}`, d),
+
+  /** Enable or disable an FAQ — disabled FAQs are never used by the AI */
+  setFaqEnabled: (id, enabled) => apiClient.patch(`/api/business/faqs/${id}/status`, { enabled }),
 
   /**
    * @function    getTwin
